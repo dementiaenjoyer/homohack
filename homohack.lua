@@ -625,8 +625,8 @@ do --// Main
     
         do --// Connections
             
-            Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function(Value)
-                Storage.Other.ViewportSize = Value
+            Camera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+                Storage.Other.ViewportSize = Camera.ViewportSize
             end)
             
         end
