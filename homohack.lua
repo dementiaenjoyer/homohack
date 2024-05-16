@@ -434,10 +434,12 @@ do --// Main
                             
                                     if Hitpart and Gun then
                                         for i, Stuff in pairs(Gun:GetChildren()) do
-                                            local Joints = Stuff:GetJoints()
-                                            if Stuff.Name:find("SightMark") or Stuff.Name:find("FlameSUP") or Stuff.Name:find("Flame") then
-                                                Joints[1].C0 = Joints[1].Part0.CFrame:ToObjectSpace(CFrame.lookAt(Joints[1].Part1.Position, Hitpart.Position))
-                                            end
+                                            pcall(function()
+                                                local Joints = Stuff:GetJoints()
+                                                if Stuff.Name:find("SightMark") or Stuff.Name:find("FlameSUP") or Stuff.Name:find("Flame") then
+                                                    Joints[1].C0 = Joints[1].Part0.CFrame:ToObjectSpace(CFrame.lookAt(Joints[1].Part1.Position, Hitpart.Position))
+                                                end
+                                            end)
                                         end
                                     end
                                 end
