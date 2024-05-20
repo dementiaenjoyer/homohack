@@ -184,7 +184,7 @@ do --// Main
                 end
             })
 
-            Sections.Aimbot:AddToggle('TeamCheck', {
+            Sections.Aimbot:AddToggle('WallCheck', {
                 Text = 'Wall Check',
                 Default = false,
                 Tooltip = nil,
@@ -593,13 +593,12 @@ do --// Main
                         if Players ~= nil then
                             local Children = Players:GetChildren()
 
-                            local Head = Children[7]
                             local Torso = Children[6]
 
                             local Screen = Camera:WorldToViewportPoint(Torso.Position)
                             local MeasureDistance = (Vector2.new(Storage.Other.ViewportSize.X / 2, Storage.Other.ViewportSize.Y / 2) - Vector2.new(Screen.X, Screen.Y)).Magnitude
                 
-                            local PlayerIsVisible = not FeatureTable.Combat.WallCheck or Functions.Normal:PlayerVisible(Players, Camera.CFrame.Position, Torso.Position, {Misc, Ignore, Players:FindFirstChildOfClass("Folder")}) or FeatureTable.Combat.WallCheck 
+                            local PlayerIsVisible = (not FeatureTable.Combat.WallCheck) or Functions.Normal:PlayerVisible(Players, Camera.CFrame.Position, Torso.Position, {Misc, Ignore, Players:FindFirstChildOfClass("Folder")})
                 
                             if MeasureDistance < Distance and MeasureDistance <= FOVCircle.Radius * 1.25 and PlayerIsVisible then
                                 Player = Players
@@ -610,7 +609,7 @@ do --// Main
                 
                                     do --// WhatTheSigma
                                         for WhatTheSigma in Storage.Index do
-                                            table.insert(Keys, Keys)
+                                            table.insert(Keys, WhatTheSigma)
                                         end
                                     end
                 
