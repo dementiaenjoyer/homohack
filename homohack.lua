@@ -720,7 +720,7 @@ do --// Main
                                     local Gun = Functions.Normal:GetGun()
                             
                                     if Hitpart and Gun then
-                                        for i, Stuff in pairs(Gun:GetChildren()) do
+                                        for i, Stuff in Gun:GetChildren() do
                                             pcall(function()
                                                 local Joints = Stuff:GetJoints()
                                                 if Stuff.Name:find("SightMark") or Stuff.Name:find("FlameSUP") or Stuff.Name:find("Flame") then
