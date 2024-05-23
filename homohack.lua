@@ -225,20 +225,6 @@ do --// Main
                     FeatureTable.Combat.SilentAim.DynamicFOV = Value
                 end
             })
-
-            Sections.Aimbot:AddSlider('Hitchance', {
-                Text = 'Hitchance',
-                Default = 100,
-                Min = 0,
-                Max = 100,
-                Rounding = 1,
-                Compact = false,
-            
-                Callback = function(Value)
-                    FeatureTable.Combat.SilentAim.Hitchance = Value
-                end
-            })
-
             Sections.Aimbot:AddSlider('AimbotRange', {
                 Text = 'Range',
                 Default = 0,
