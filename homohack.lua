@@ -1204,7 +1204,6 @@ end)
 
 local MenuGroup = Tabs['Settings']:AddLeftGroupbox('Menu')
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
