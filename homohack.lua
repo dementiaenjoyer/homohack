@@ -22,6 +22,10 @@ local Players = workspace.Players
 local Ignore = workspace.Ignore
 local Misc = Ignore.Misc
 
+--// Roblox
+
+local Vector3New = Vector3.new
+
 --// Services
 
 local UserInputService = game:GetService("UserInputService")
@@ -37,9 +41,17 @@ local Tabs = {
 }
 
 local Sections = {
+
+    --// Aimbot Tab
+
     Aimbot = Tabs.AimbotTab:AddLeftGroupbox('Aimbot'),
+    AimbotSettings = Tabs.AimbotTab:AddRightGroupbox('Aimbot Settings'),
+    
+    --// Visuals Tab
+
     Visuals = Tabs.VisualsTab:AddLeftGroupbox('Visuals'),
     VisualSettings = Tabs.VisualsTab:AddRightGroupbox('Configuration'),
+
     Grenade = Tabs.VisualsTab:AddLeftGroupbox('Grenades'),
     Lighting = Tabs.VisualsTab:AddRightGroupbox('Lighting'),
     Misc = Tabs.MiscTab:AddLeftGroupbox('Misc'),
@@ -48,7 +60,7 @@ local Sections = {
 
 local FeatureTable = {
     Combat = {
-        SilentAim = false,
+        SilentAim = {Enabled = false, Hitchance = 100, DummyRange = 0, DynamicFOV = false},
         WallCheck = false,
         TeamCheck = false,
         Hitpart = 7, --// 6 = Torso, 7 = Head
@@ -78,6 +90,7 @@ local FeatureTable = {
     },
     Misc = {
         Player = {
+            Fly = {Enabled = false, Speed = 0},
             Bhop = false,
             JumpPowerModifier = {Enabled = false, Power = 50},
             HipHeight = 0,
@@ -97,6 +110,7 @@ local Storage = {
     },
     Other = {
         ViewportSize = Camera.ViewportSize,
+        ClosestPlayer = nil,
     },
 }
 
@@ -180,27 +194,7 @@ do --// Main
                 Tooltip = nil,
             
                 Callback = function(Value)
-                    FeatureTable.Combat.SilentAim = Value
-                end
-            })
-
-            Sections.Aimbot:AddToggle('WallCheck', {
-                Text = 'Wall Check',
-                Default = false,
-                Tooltip = nil,
-            
-                Callback = function(Value)
-                    FeatureTable.Combat.WallCheck = Value
-                end
-            })
-
-            Sections.Aimbot:AddToggle('TeamCheck', {
-                Text = 'Team Check',
-                Default = false,
-                Tooltip = nil,
-            
-                Callback = function(Value)
-                    FeatureTable.Combat.TeamCheck = Value
+                    FeatureTable.Combat.SilentAim.Enabled = Value
                 end
             })
 
@@ -222,16 +216,39 @@ do --// Main
                 end
             })
 
-            Sections.Aimbot:AddSlider('Range', {
+            Sections.Aimbot:AddToggle('DynamicRange', {
+                Text = 'Dynamic Range',
+                Default = false,
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Combat.SilentAim.DynamicFOV = Value
+                end
+            })
+
+            Sections.Aimbot:AddSlider('Hitchance', {
+                Text = 'Hitchance',
+                Default = 100,
+                Min = 0,
+                Max = 100,
+                Rounding = 1,
+                Compact = false,
+            
+                Callback = function(Value)
+                    FeatureTable.Combat.SilentAim.Hitchance = Value
+                end
+            })
+
+            Sections.Aimbot:AddSlider('AimbotRange', {
                 Text = 'Range',
                 Default = 0,
                 Min = 0,
                 Max = 1000,
                 Rounding = 1,
                 Compact = false,
-            
+
                 Callback = function(Value)
-                    FOVCircle.Radius = Value
+                    FeatureTable.Combat.SilentAim.DummyRange = Value --// im not gonna use flags, but feel free to switch to it :D
                 end
             })
 
@@ -249,6 +266,41 @@ do --// Main
                     else
                         FeatureTable.Combat.Hitpart = "Random"
                     end
+                end
+            })
+
+            --// Aimbot Settings
+
+            Sections.AimbotSettings:AddToggle('WallCheck', {
+                Text = 'Wall Check',
+                Default = false,
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Combat.WallCheck = Value
+                end
+            })
+
+            Sections.AimbotSettings:AddToggle('TeamCheck', {
+                Text = 'Team Check',
+                Default = false,
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Combat.TeamCheck = Value
+                end
+            })
+
+            Sections.AimbotSettings:AddSlider('Hitchance', {
+                Text = 'Hitchance',
+                Default = 100,
+                Min = 0,
+                Max = 100,
+                Rounding = 1,
+                Compact = false,
+            
+                Callback = function(Value)
+                    FeatureTable.Combat.SilentAim.Hitchance = Value
                 end
             })
     
@@ -347,6 +399,32 @@ do --// Main
             
                 Callback = function(Value)
                     FeatureTable.Visuals.UseTeamColor = Value
+                end
+            })
+
+            Sections.VisualSettings:AddSlider('ChamFillTransparency', {
+                Text = 'Cham Fill Transparency',
+                Default = 0,
+                Min = 0,
+                Max = 1,
+                Rounding = 1,
+                Compact = false,
+
+                Callback = function(Value)
+                    FeatureTable.Visuals.Chams.FillTransparency = Value
+                end
+            })
+
+            Sections.VisualSettings:AddSlider('ChamOutlineTransparency', {
+                Text = 'Cham Outline Transparency',
+                Default = 0,
+                Min = 0,
+                Max = 1,
+                Rounding = 1,
+                Compact = false,
+
+                Callback = function(Value)
+                    FeatureTable.Visuals.Chams.OutlineTransparency = Value
                 end
             })
 
@@ -461,6 +539,16 @@ do --// Main
 
             --// Player section
 
+            Sections.Player:AddToggle('Fly', {
+                Text = 'Fly',
+                Default = false,
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Misc.Player.Fly.Enabled = Value
+                end
+            })
+
             Sections.Player:AddToggle('Bhop', {
                 Text = 'Bhop',
                 Default = false,
@@ -504,6 +592,19 @@ do --// Main
             
                 Callback = function(Value)
                     FeatureTable.Misc.Player.HipHeight = Value
+                end
+            })
+
+            Sections.Player:AddSlider('FlySpeed', {
+                Text = 'Fly Speed',
+                Default = 0,
+                Min = 0,
+                Max = 50,
+                Rounding = 1,
+                Compact = false,
+            
+                Callback = function(Value)
+                    FeatureTable.Misc.Player.Fly.Speed = Value
                 end
             })
 
@@ -710,25 +811,41 @@ do --// Main
     
                         do --// Aimbot
     
-                            if FeatureTable.Combat.SilentAim then
+                            if FeatureTable.Combat.SilentAim.Enabled then
 
-                                local EnemyInformation = Functions.Normal:getClosestPlayer()
-                                local Target = EnemyInformation.Closest
+                                local Enemy = Storage.Other.ClosestPlayer
+                                local Target = Enemy.Closest
                                 if Target ~= nil and (FeatureTable.Combat.TeamCheck and Functions.Normal:GetTeam(Target) ~= game.Players.LocalPlayer.Team or not FeatureTable.Combat.TeamCheck) then
 
-                                    local Hitpart = EnemyInformation.Hitpart
+                                    local Hitpart = Enemy.Hitpart
                                     local Gun = Functions.Normal:GetGun()
-                            
+
                                     if Hitpart and Gun then
-                                        for i, Stuff in Gun:GetChildren() do
+                                        for i, GunParts in Gun:GetChildren() do
                                             pcall(function()
-                                                local Joints = Stuff:GetJoints()
-                                                if Stuff.Name:find("SightMark") or Stuff.Name:find("FlameSUP") or Stuff.Name:find("Flame") then
-                                                    Joints[1].C0 = Joints[1].Part0.CFrame:ToObjectSpace(CFrame.lookAt(Joints[1].Part1.Position, Hitpart.Position))
+                                                local Joints = GunParts:GetJoints()
+                                                if GunParts.Name:find("SightMark") or GunParts.Name:find("FlameSUP") or GunParts.Name:find("Flame") then
+                                                    local Vector = Vector3New()
+                                    
+                                                    do --// Hitchance
+
+                                                        local Chance = FeatureTable.Combat.SilentAim.Hitchance
+                                                        if Chance < 100 then --// Pretty awful but it works
+                                                            local MissChance = (100 - Chance) / 100
+                                                            local x = math.random() * 3 - 1
+                                                            local y = math.random() * 3 - 1
+                                                            local z = math.random() * 3 - 1 
+                                                            Vector = Vector3New(x, y, z) * MissChance
+                                                        end
+
+                                                    end
+                                    
+                                                    Joints[1].C0 = Joints[1].Part0.CFrame:ToObjectSpace(CFrame.lookAt(Joints[1].Part1.Position, (Hitpart.Position + Vector)))
                                                 end
                                             end)
                                         end
                                     end
+
                                 end
 
                             end
@@ -768,7 +885,7 @@ do --// Main
                                                 Box.Position = Vector2.new(PosX, PosY)
                                                 Box.Size = Vector2.new(2 * Scale, 3 * Scale)
                                                 Box.Visible = true
-                                                
+
                                                 if FeatureTable.Visuals.UseTeamColor then --// 😭
                                                     if tostring(TeamColor) == "Bright blue" then
                                                         Box.Color = Color3.fromRGB(0, 162, 255)
@@ -843,8 +960,8 @@ do --// Main
                                                     end
 
                                                 end
-                                                
-                                                if FeatureTable.Visuals.UseTeamColor then --// emm
+
+                                                if FeatureTable.Visuals.UseTeamColor then
                                                     if tostring(TeamColor) == "Bright blue" then
                                                         Tracer.Color = Color3.fromRGB(0, 162, 255)
                                                     elseif tostring(TeamColor) == "Bright orange" then
@@ -941,6 +1058,40 @@ do --// Main
                                         if FeatureTable.Misc.Player.JumpPowerModifier.Enabled then
                                             Humanoid.JumpPower = FeatureTable.Misc.Player.JumpPowerModifier.Power
                                         end
+                                        if FeatureTable.Misc.Player.Fly.Enabled then
+
+                                            local Direction = Vector3New()
+
+                                            if LocalPlayer then
+
+                                                local LookVector = Camera.CFrame.LookVector * Vector3New(1, 0, 1)
+                                                local Directions = { --// Very optimized real!
+                                                    [Enum.KeyCode.W] = LookVector,
+                                                    [Enum.KeyCode.S] = -LookVector,
+                                                    [Enum.KeyCode.D] = Vector3New(-LookVector.Z, 0, LookVector.X),
+                                                    [Enum.KeyCode.A] = Vector3New(LookVector.Z, 0, -LookVector.X),
+                                                    [Enum.KeyCode.Space] = Vector3New(0, 5 * 5, 0),
+                                                    [Enum.KeyCode.LeftControl] = Vector3New(0, -5 * 5, 0)
+                                                }
+                                                
+                                                for Key, Dir in Directions do
+                                                    if UserInputService:IsKeyDown(Key) then
+                                                        Direction = Direction + Dir
+                                                    end
+                                                end
+                                                
+                                                if Direction.Magnitude > 0 then
+                                                    Direction = Direction.Unit
+                                                    LocalPlayer.HumanoidRootPart.Velocity = Direction * FeatureTable.Misc.Player.Fly.Speed
+                                                    LocalPlayer.HumanoidRootPart.Anchored = false
+                                                else
+                                                    LocalPlayer.HumanoidRootPart.Velocity = Vector3New()
+                                                    LocalPlayer.HumanoidRootPart.Anchored = true
+                                                end
+
+                                            end
+
+                                        end
                                         if UserInputService:IsKeyDown(Enum.KeyCode.Space) and FeatureTable.Misc.Player.Bhop then
                                             Humanoid.Jump = true
                                         end
@@ -957,7 +1108,22 @@ do --// Main
                     end
 
                     do --// Extra
-                        FOVCircle.Position = Vector2.new(Storage.Other.ViewportSize.X/2, Storage.Other.ViewportSize.Y/2)
+
+                        Storage.Other.ClosestPlayer = Functions.Normal:getClosestPlayer()
+                        
+                        do --// FOV Circle
+
+                            local Dynamic = FeatureTable.Combat.SilentAim.DummyRange / math.tan(math.rad(Camera.FieldOfView / 2))
+                            FOVCircle.Position = Vector2.new(Storage.Other.ViewportSize.X/2, Storage.Other.ViewportSize.Y/2)
+
+                            if FeatureTable.Combat.SilentAim.DynamicFOV then
+                                FOVCircle.Radius = Dynamic
+                            else
+                                FOVCircle.Radius = FeatureTable.Combat.SilentAim.DummyRange
+                            end
+                            
+                        end
+
                     end
     
                 end
