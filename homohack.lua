@@ -1,4 +1,5 @@
 --// Made by @dementia enjoyer
+--// Forgive me for the very shit code, gonna rewrite dis later and actually try to make it look good lol
 --// join .gg/syAGdFKAZQ for updates and more scripts like this <3 \\--
 
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
@@ -20,11 +21,13 @@ local Window = Library:CreateWindow({
 local Camera = workspace.CurrentCamera
 local Players = workspace.Players
 local Ignore = workspace.Ignore
+local DeadBodies = workspace.Ignore.DeadBody
 local Misc = Ignore.Misc
 
 --// Roblox
 
 local Vector3New = Vector3.new
+local CFrameNew = CFrame.new
 
 --// Services
 
@@ -70,9 +73,10 @@ local FeatureTable = {
         --// Features \\--
 
         Box = {Enabled = false, Color = Color3.fromRGB(255, 255, 255)},
-        Tracers = {Enabled = false, Color = Color3.fromRGB(255, 255, 255), Origin = "Middle"},
+        Box3D = {Enabled = false, Color = Color3.fromRGB(255, 255, 255), Method = "Flat"},
+        Tracers = {Enabled = false, Color = Color3.fromRGB(255, 255, 255), Origin = "Middle", End = "Head"}, --// 7 = head, 6 = torso (index)
         Chams = {Enabled = false, FillColor = Color3.fromRGB(255, 255, 255), OutlineColor = Color3.fromRGB(255, 255, 255), VisibleOnly = false, FillTransparency = 0, OutlineTransparency = 0},
-
+        Dynamic = true,
         TeamCheck = false,
         UseTeamColor = false, --// Team colors dont apply to chams btw
 
@@ -99,12 +103,18 @@ local FeatureTable = {
 }
 
 local Storage = {
-    Index = {
-        Head = 7,
-        Torso = 6,
+    Identifiers = {
+        Head = Vector3.new(1,1,1),
+        Torso = Vector3.new(2,2,1),
+    },
+    BoxIndex = {
+        {1, 2}, {2, 3}, {3, 4}, {4, 1},
+        {5, 6}, {6, 7}, {7, 8}, {8, 5},
+        {1, 5}, {2, 6}, {3, 7}, {4, 8} 
     },
     ESP = {
         Boxes = {},
+        Box3D = {},
         Tracers = {},
         Chams = {},
     },
@@ -183,6 +193,7 @@ end
 --// Rest
 
 do --// Main
+    Library:Notify("I am aware of the optimization issues, they will be fixed in the near future", 5)
 
     do --// Elements
 
@@ -312,6 +323,24 @@ do --// Main
                 end
             })
 
+            Sections.Visuals:AddToggle('Box3D', {
+                Text = '3D Box',
+                Default = false,
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Visuals.Box3D.Enabled = Value
+                end
+            }):AddColorPicker('Box3DColor', {
+                Default = Color3.fromRGB(255, 255, 255),
+                Title = 'Box 3D Color',
+                Transparency = 0,
+            
+                Callback = function(Value)
+                    FeatureTable.Visuals.Box3D.Color = Value
+                end
+            })
+
             Sections.Visuals:AddToggle('Tracers', {
                 Text = 'Tracers',
                 Default = false,
@@ -414,6 +443,19 @@ do --// Main
                 end
             })
 
+            Sections.VisualSettings:AddDropdown('Box3DSize', {
+                Values = { 'Flat', 'Full' },
+                Default = 1,
+                Multi = false,
+            
+                Text = 'Box 3D Size',
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Visuals.Box3D.Method = Value
+                end
+            })
+
             Sections.VisualSettings:AddDropdown('TracerOrigin', {
                 Values = { 'Top', 'Middle', 'Bottom', 'Gun' },
                 Default = 2,
@@ -424,6 +466,19 @@ do --// Main
             
                 Callback = function(Value)
                     FeatureTable.Visuals.Tracers.Origin = Value
+                end
+            })
+
+            Sections.VisualSettings:AddDropdown('TracerEnd', {
+                Values = { 'Head', 'Torso' },
+                Default = 1,
+                Multi = false,
+            
+                Text = 'Tracer End',
+                Tooltip = nil,
+            
+                Callback = function(Value)
+                    FeatureTable.Visuals.Tracers.End = Value
                 end
             })
 
@@ -627,6 +682,26 @@ do --// Main
                             end
                         end
                     end
+                    function Functions.Normal:GetPlayerBodyparts(Player)
+                        local Head
+                        local Torso
+                        local Children = Player:GetChildren()
+                        local HeadSize = Storage.Identifiers.Head
+                        local TorsoSize = Storage.Identifiers.Torso
+                    
+                        for i = 1, #Children do
+                            local Child = Children[i]
+                            if Child:IsA("BasePart") then
+                                if Child.Size == HeadSize then
+                                    Head = Child
+                                elseif Child.Size == TorsoSize then
+                                    Torso = Child
+                                end
+                            end
+                        end
+                    
+                        return { Head = Head, Torso = Torso }
+                    end                                      
 
                     function Functions.Normal:GetPlayers()
                         local PlayerList = {}
@@ -679,13 +754,12 @@ do --// Main
                     for i, Players in Functions.Normal:GetPlayers() do
                         if Players ~= nil then
                             local Children = Players:GetChildren()
+                            local Bodyparts = Functions.Normal:GetPlayerBodyparts(Players)
 
-                            local Torso = Children[6]
-
-                            local Screen = Camera:WorldToViewportPoint(Torso.Position)
+                            local Screen = Camera:WorldToViewportPoint(Bodyparts.Torso.Position)
                             local MeasureDistance = (Vector2.new(Storage.Other.ViewportSize.X / 2, Storage.Other.ViewportSize.Y / 2) - Vector2.new(Screen.X, Screen.Y)).Magnitude
                 
-                            local PlayerIsVisible = (not FeatureTable.Combat.WallCheck) or Functions.Normal:PlayerVisible(Players, Camera.CFrame.Position, Torso.Position, {Misc, Ignore, Players:FindFirstChildOfClass("Folder")})
+                            local PlayerIsVisible = (not FeatureTable.Combat.WallCheck) or Functions.Normal:PlayerVisible(Players, Camera.CFrame.Position, Bodyparts.Torso.Position, {Misc, Ignore, Players:FindFirstChildOfClass("Folder")})
                 
                             if MeasureDistance < Distance and MeasureDistance <= FOVCircle.Radius * 1.25 and PlayerIsVisible then
                                 Player = Players
@@ -705,7 +779,7 @@ do --// Main
                 
                                     Hitpart = Children[Storage.Index[Rndm]]
                                 else
-                                    Hitpart = Children[FeatureTable.Combat.Hitpart]
+                                    Hitpart = Bodyparts.Head
                                 end
                             end
                         end
@@ -740,37 +814,63 @@ do --// Main
             do --// ESP
                 function Functions.ESP:Create(Player)
         
-                    if not table.find(Storage.ESP.Boxes, Player) then
+                    if FeatureTable.Visuals.Box.Enabled then
+
+                        if not table.find(Storage.ESP.Boxes, Player) then
         
-                        local Box = Drawing.new("Square")
-                        Box.Color = Color3.fromRGB(255,255,255)
-                        Box.Transparency = 1
-                        Box.Visible = true
-                        Box.Thickness = 1
-                        Box.ZIndex = 2
-                        
-                        do --// Table insert
-        
-                            table.insert(Storage.ESP.Boxes, Box)
-                            table.insert(Storage.ESP.Boxes, Player)
-        
+                            local Box = Drawing.new("Square")
+                            Box.Color = Color3.fromRGB(255,255,255)
+                            Box.Transparency = 1
+                            Box.Visible = true
+                            Box.Thickness = 1
+                            Box.ZIndex = 2
+                            
+                            do --// Table insert
+            
+                                table.insert(Storage.ESP.Boxes, Box)
+                                table.insert(Storage.ESP.Boxes, Player)
+            
+                            end
+                    
                         end
-                
+
                     end
-                    if not table.find(Storage.ESP.Tracers, Player) then
+                    if FeatureTable.Visuals.Tracers.Enabled then
+
+                        if not table.find(Storage.ESP.Tracers, Player) then
         
-                        local Tracer = Drawing.new("Line")
-                        Tracer.Transparency = 1
-                        Tracer.Visible = true
-                        Tracer.Color = Color3.fromRGB(255,255,255)
-                        
-                        do --// Table insert
-        
-                            table.insert(Storage.ESP.Tracers, Tracer)
-                            table.insert(Storage.ESP.Tracers, Player)
-        
+                            local Tracer = Drawing.new("Line")
+                            Tracer.Transparency = 1
+                            Tracer.Visible = true
+                            Tracer.Color = Color3.fromRGB(255,255,255)
+                            
+                            do --// Table insert
+            
+                                table.insert(Storage.ESP.Tracers, Tracer)
+                                table.insert(Storage.ESP.Tracers, Player)
+            
+                            end
+                    
                         end
-                
+                        
+                    end
+                    if FeatureTable.Visuals.Box3D.Enabled then
+                        if not table.find(Storage.ESP.Box3D, Player) then
+                            local Lines = {}
+                            
+                            for i = 1, 12 do
+                                local Line = Drawing.new("Line")
+                                Line.Transparency = 1
+                                Line.Color = Color3.fromRGB(255, 255, 255)
+                                Line.Visible = false
+                                table.insert(Lines, Line)
+                            end
+                    
+                            do --// Table insert
+                                table.insert(Storage.ESP.Box3D, Lines)
+                                table.insert(Storage.ESP.Box3D, Player)
+                            end
+                        end
                     end
         
                 end
@@ -784,6 +884,7 @@ do --// Main
                         table.remove(esptable, index-1)
                     end
                 end
+
             end
     
         end
@@ -854,8 +955,9 @@ do --// Main
     
                                     local Box = Storage.ESP.Boxes[i-1]
                     
-                                    if FeatureTable.Visuals.Box.Enabled and Player:IsDescendantOf(workspace) then
-                                        local Torso = Player:GetChildren()[6]
+                                    if FeatureTable.Visuals.Box.Enabled and Player:IsDescendantOf(workspace) and not tostring(Player:GetFullName()):find(tostring(DeadBodies)) then
+                                        local Bodyparts = Functions.Normal:GetPlayerBodyparts(Player)
+                                        local Torso = Bodyparts.Torso
                                         if Torso ~= nil then
                                             local Position, OnScreen = Camera:WorldToViewportPoint(Torso.Position) --// Convert to screen pos since we're rendering the boxes on the screen (duh)
     
@@ -903,6 +1005,94 @@ do --// Main
 
                         end
 
+                        do --// 3D Box
+                            for i, Player in Storage.ESP.Box3D do
+                                if typeof(Player) == "Instance" then
+                                    local Objects = Storage.ESP.Box3D[i-1]
+                                    
+                                    if Objects then
+                                        if FeatureTable.Visuals.Box3D.Enabled then
+                                            local Bodyparts = Functions.Normal:GetPlayerBodyparts(Player)
+                                            local Torso = Bodyparts.Torso
+                                            local Team = Functions.Normal:GetTeam(Player)
+                                            
+                                            if Player and Torso and not tostring(Player:GetFullName()):find(tostring(DeadBodies)) and Team and Team.TeamColor then
+                                                local a, Visible = Camera:WorldToViewportPoint(Torso.Position)
+                                                local TeamColor = Team.TeamColor
+                                                local Size = Vector3.new(2, 3, 1.5)
+                                                local Corners = {
+                                                    Torso.CFrame * CFrameNew(-Size.X, Size.Y, -Size.Z),
+                                                    Torso.CFrame * CFrameNew(Size.X, Size.Y, -Size.Z),
+                                                    Torso.CFrame * CFrameNew(Size.X, -Size.Y, -Size.Z),
+                                                    Torso.CFrame * CFrameNew(-Size.X, -Size.Y, -Size.Z),
+                                                    Torso.CFrame * CFrameNew(-Size.X, Size.Y, Size.Z),
+                                                    Torso.CFrame * CFrameNew(Size.X, Size.Y, Size.Z),
+                                                    Torso.CFrame * CFrameNew(Size.X, -Size.Y, Size.Z),
+                                                    Torso.CFrame * CFrameNew(-Size.X, -Size.Y, Size.Z)
+                                                }
+                                                
+                                                if FeatureTable.Visuals.TeamCheck and tostring(Team) ~= game.Players.LocalPlayer.Team.Name or not FeatureTable.Visuals.TeamCheck then
+                                                    if FeatureTable.Visuals.Box3D.Method == "Flat" then
+                                                        for iA = 1, 4 do
+                                                            local Line = Objects[iA]
+                                                            Line.Visible = Visible
+                                                            if Visible then
+                                                                local Next = (iA % 4) + 1
+                                                                local ScreenPos1 = Camera:WorldToViewportPoint(Corners[iA].Position)
+                                                                local ScreenPos2 = Camera:WorldToViewportPoint(Corners[Next].Position)
+                                                                
+                                                                Line.From = Vector2.new(ScreenPos1.X, ScreenPos1.Y)
+                                                                Line.To = Vector2.new(ScreenPos2.X, ScreenPos2.Y)
+                                                                
+                                                                if FeatureTable.Visuals.UseTeamColor then
+                                                                    if tostring(TeamColor) == "Bright blue" then
+                                                                        Line.Color = Color3.fromRGB(0, 162, 255)
+                                                                    elseif tostring(TeamColor) == "Bright orange" then
+                                                                        Line.Color = Color3.fromRGB(255, 162, 0)
+                                                                    end
+                                                                else
+                                                                    Line.Color = FeatureTable.Visuals.Box3D.Color
+                                                                end
+                                                            end
+                                                        end
+                                                    else
+                                                        for iB = 1, 12 do
+                                                            local Line = Objects[iB]
+                                                            Line.Visible = Visible
+                                                            
+                                                            if Visible then
+                                                                local b = Storage.BoxIndex[iB]
+                                                                local c = Camera:WorldToViewportPoint(Corners[b[1]].Position)
+                                                                local d = Camera:WorldToViewportPoint(Corners[b[2]].Position)
+                                                                
+                                                                Line.From = Vector2.new(c.X, c.Y)
+                                                                Line.To = Vector2.new(d.X, d.Y)
+                                                                
+                                                                if FeatureTable.Visuals.UseTeamColor then
+                                                                    if tostring(TeamColor) == "Bright blue" then
+                                                                        Line.Color = Color3.fromRGB(0, 162, 255)
+                                                                    elseif tostring(TeamColor) == "Bright orange" then
+                                                                        Line.Color = Color3.fromRGB(255, 162, 0)
+                                                                    end
+                                                                else
+                                                                    Line.Color = FeatureTable.Visuals.Box3D.Color
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                else
+                                                    Functions.ESP:ClearTable(Objects, Storage.ESP.Box3D, i)
+                                                end
+                                            else
+                                                Functions.ESP:ClearTable(Objects, Storage.ESP.Box3D, i)
+                                            end
+                                        else
+                                            Functions.ESP:ClearTable(Objects, Storage.ESP.Box3D, i)
+                                        end
+                                    end
+                                end
+                            end
+                        end
                         do --// Tracer ESP
 
                             for i,Player in Storage.ESP.Tracers do --// Tracer logic (obviously once again)
@@ -911,9 +1101,10 @@ do --// Main
                                     local Tracer = Storage.ESP.Tracers[i-1]
                     
                                     if FeatureTable.Visuals.Tracers.Enabled and Player:IsDescendantOf(workspace) then
-                                        local Torso = Player:GetChildren()[6]
-                                        if Torso ~= nil then
-                                            local Position, OnScreen = Camera:WorldToViewportPoint(Torso.Position) --// Convert to screen pos since we're rendering the boxes on the screen (duh)
+                                        local Bodyparts = Functions.Normal:GetPlayerBodyparts(Player)
+                                        local Target = Bodyparts[FeatureTable.Visuals.Tracers.End]
+                                        if Target ~= nil and not tostring(Player:GetFullName()):find(tostring(DeadBodies)) then
+                                            local Position, OnScreen = Camera:WorldToViewportPoint(Target.Position) --// Convert to screen pos since we're rendering the boxes on the screen (duh)
     
                                             local Team = Functions.Normal:GetTeam(Player)
                                             local TeamColor = Team.TeamColor
@@ -934,6 +1125,7 @@ do --// Main
 
                                                     Tracer.From = Vector2.new(Storage.Other.ViewportSize.X / 2, Value)
                                                     Tracer.To = Vector2.new(Position.X, Position.Y)
+
                                                 else
 
                                                     local Gun = Functions.Normal:GetGun()
@@ -987,7 +1179,7 @@ do --// Main
                                     local Team = Functions.Normal:GetTeam(Player)
                                     local TeamColor = Team.TeamColor
                             
-                                    if FeatureTable.Visuals.Chams.Enabled and (FeatureTable.Visuals.TeamCheck and tostring(Team) ~= game.Players.LocalPlayer.Team.Name or not FeatureTable.Visuals.TeamCheck) then
+                                    if not tostring(Player:GetFullName()):find(tostring(DeadBodies)) and FeatureTable.Visuals.Chams.Enabled and (FeatureTable.Visuals.TeamCheck and tostring(Team) ~= game.Players.LocalPlayer.Team.Name or not FeatureTable.Visuals.TeamCheck) then
                                         
                                         if not Highlight then
                                             Highlight = Instance.new("Highlight", Player)
