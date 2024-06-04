@@ -66,7 +66,7 @@ local FeatureTable = {
         SilentAim = {Enabled = false, Hitchance = 100, DummyRange = 0, DynamicFOV = false},
         WallCheck = false,
         TeamCheck = false,
-        Hitpart = 7, --// 6 = Torso, 7 = Head
+        Hitpart = "Head", --// 6 = Torso, 7 = Head
     },
     Visuals = {
 
@@ -258,11 +258,7 @@ do --// Main
                 Tooltip = nil,
             
                 Callback = function(Value)
-                    if Storage.Index[Value] ~= nil then
-                        FeatureTable.Combat.Hitpart = Storage.Index[Value]
-                    else
-                        FeatureTable.Combat.Hitpart = "Random"
-                    end
+                    FeatureTable.Combat.Hitpart = Value
                 end
             })
 
@@ -753,7 +749,6 @@ do --// Main
                 
                     for i, Players in Functions.Normal:GetPlayers() do
                         if Players ~= nil then
-                            local Children = Players:GetChildren()
                             local Bodyparts = Functions.Normal:GetPlayerBodyparts(Players)
 
                             local Screen = Camera:WorldToViewportPoint(Bodyparts.Torso.Position)
@@ -766,20 +761,22 @@ do --// Main
                                 Distance = MeasureDistance
                 
                                 if tostring(FeatureTable.Combat.Hitpart):find("Random") then
+                                    print("Random")
                                     local Keys = {}
                 
                                     do --// WhatTheSigma
-                                        for WhatTheSigma in Storage.Index do
+                                        for WhatTheSigma in Storage.Identifiers do
                                             table.insert(Keys, WhatTheSigma)
                                         end
                                     end
                 
                                     local Index = math.random(1, Functions.Normal:GetLength(Keys))
                                     local Rndm = Keys[Index]
-                
-                                    Hitpart = Children[Storage.Index[Rndm]]
+                                    if Rndm ~= "Random" then
+                                        Hitpart = Bodyparts[Rndm]
+                                    end
                                 else
-                                    Hitpart = Bodyparts.Head
+                                    Hitpart = Bodyparts[FeatureTable.Combat.Hitpart]
                                 end
                             end
                         end
