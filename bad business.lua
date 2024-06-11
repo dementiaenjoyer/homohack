@@ -326,7 +326,7 @@ do --// Logic
 
                 local Closest = Storage.Aimbot.ClosestPlayer
 
-                if Storage.Aimbot.ClosestPlayer ~= nil then
+                if Features.Combat.Aimbot.Enabled and Storage.Aimbot.ClosestPlayer ~= nil then
                     if Closest ~= nil and Closest:FindFirstChild("Body") and Closest["Body"]:FindFirstChild("Head") then
                         Camera.CFrame = CFrame.new(Camera.CFrame.Position, Closest["Body"]["Head"].Position + (Closest["Body"]["Chest"].Velocity * Features.Combat.Aimbot.Prediction))
                     end
