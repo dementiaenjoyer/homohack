@@ -8,6 +8,7 @@ local GameId = game.GameId
 local Games = {
     { name = "Bad Business", gameid = 1168263273, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad%20business.lua" },
     { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua" },
+    { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua" },
 }
 
 function Fetch(URL)
