@@ -57,12 +57,6 @@ FOV.Visible = false
 FOV.Transparency = 1
 FOV.Radius = 100
 
---// Disable anti cheat
-
-local Disabler = Instance.new("RemoteEvent");
-Disabler.Name = "ZnVsbHkgbWFkZSBieSBkZW1lbnRpYSBlbmpveWVy" --// weird string that is checked in a network module
-Disabler.Parent = ReplicatedStorage;
-
 --// Rest
 
 local Window = Library:CreateWindow({
