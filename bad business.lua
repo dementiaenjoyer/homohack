@@ -1,5 +1,4 @@
 --// Made by dementia enjoyer <3
-
 --// UI
 
 local Repository = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
@@ -9,6 +8,7 @@ local SaveManager = loadstring(game:HttpGet(Repository .. 'addons/SaveManager.lu
 
 --// Services
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
@@ -29,12 +29,18 @@ local Storage = {
 
 local Features = {
     Combat = {
-        Aimbot = {Enabled = false, TeamCheck = false, Prediction = 0.1}
+        Aimbot = {Enabled = false, Hitpart = "Head", TeamCheck = false, PredictionEnabled = false, Prediction = 0.1, AccountDistance = false, VisibilityCheck = false},
+        Exploits = {
+            CameraManipulation = { Enabled = false, Distance = 5 }
+        }
     },
     Visuals = {
         TeamCheck = false,
         Box = { Enabled = false, Color = Color3.fromRGB(255, 255, 255) },
         Health = { Enabled = false, Color = Color3.fromRGB(100, 255, 0) },
+    },
+    Misc = {
+        Fly = { Enabled = false, Speed = 15 }
     }
 }
 
@@ -51,6 +57,12 @@ FOV.Visible = false
 FOV.Transparency = 1
 FOV.Radius = 100
 
+--// Disable anti cheat
+
+local Disabler = Instance.new("RemoteEvent");
+Disabler.Name = "ZnVsbHkgbWFkZSBieSBkZW1lbnRpYSBlbmpveWVy" --// weird string that is checked in a network module
+Disabler.Parent = ReplicatedStorage;
+
 --// Rest
 
 local Window = Library:CreateWindow({
@@ -64,12 +76,15 @@ local Window = Library:CreateWindow({
 local Tabs = {
     AimbotTab = Window:AddTab('Aimbot'),
     VisualsTab = Window:AddTab('Visuals'),
+    MiscTab = Window:AddTab('Misc'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
 local Sections = {
     AimbotSection = Tabs.AimbotTab:AddLeftGroupbox('Aimbot'),
+    ExploitsSection = Tabs.AimbotTab:AddRightGroupbox('Exploits'),
     VisualsSection = Tabs.VisualsTab:AddLeftGroupbox('Visuals'),
+    MiscSection = Tabs.MiscTab:AddLeftGroupbox('Misc'),
 }
 
 do --// UI Elements
@@ -86,8 +101,18 @@ do --// UI Elements
             end
         })
 
+        Sections.AimbotSection:AddToggle('PredictionToggle', {
+            Text = 'Predict',
+            Default = false,
+            Tooltip = 'This is a tooltip',
+        
+            Callback = function(Value)
+                Features.Combat.Aimbot.PredictionEnabled = Value
+            end
+        })
+
         Sections.AimbotSection:AddToggle('TeamCheckAimbot', {
-            Text = 'TeamCheck',
+            Text = 'Team Check',
             Default = false,
             Tooltip = 'This is a tooltip',
         
@@ -115,6 +140,44 @@ do --// UI Elements
         })
 
         Sections.AimbotSection:AddSlider('AimbotRange', {
+            Text = 'Aimbot Range',
+            Default = 100,
+            Min = 0,
+            Max = 500,
+            Rounding = 1,
+            Compact = false,
+        
+            Callback = function(Value)
+                FOV.Radius = Value
+            end
+        })
+
+        Sections.AimbotSection:AddDropdown('Aimpart', {
+            Values = { 'Head', 'Chest' },
+            Default = 1,
+            Multi = false,
+            
+            Text = 'Aim Part',
+            Tooltip = nil,
+        
+            Callback = function(Value)
+                Features.Combat.Aimbot.Hitpart = Value
+            end
+        })
+
+        Sections.AimbotSection:AddDivider()
+
+        Sections.AimbotSection:AddToggle('VisualiseRange', {
+            Text = 'Account Distance',
+            Default = false,
+            Tooltip = 'This is a tooltip',
+        
+            Callback = function(Value)
+                Features.Combat.Aimbot.AccountDistance = Value
+            end
+        })
+
+        Sections.AimbotSection:AddSlider('AimbotRange', {
             Text = 'Prediction',
             Default = 0.1,
             Min = 0,
@@ -127,16 +190,30 @@ do --// UI Elements
             end
         })
         
-        Sections.AimbotSection:AddSlider('AimbotRange', {
-            Text = 'Aimbot Range',
-            Default = 100,
+    end
+
+    do --// Exploits
+
+        Sections.ExploitsSection:AddToggle('PosManipulation', {
+            Text = 'Position Manipulation',
+            Default = false,
+            Tooltip = 'This is a tooltip',
+        
+            Callback = function(Value)
+                Features.Combat.Exploits.CameraManipulation.Enabled = Value
+            end
+        })
+
+        Sections.ExploitsSection:AddSlider('Distance', {
+            Text = 'Distance',
+            Default = 5,
             Min = 0,
-            Max = 500,
+            Max = 10,
             Rounding = 1,
             Compact = false,
         
             Callback = function(Value)
-                FOV.Radius = Value
+                Features.Combat.Exploits.CameraManipulation.Distance = Value
             end
         })
         
@@ -191,6 +268,33 @@ do --// UI Elements
         })
         
     end
+
+    do --// Misc
+
+        Sections.MiscSection:AddToggle('FlyEnabled', {
+            Text = 'Fly',
+            Default = false,
+            Tooltip = 'This is a tooltip',
+        
+            Callback = function(Value)
+                Features.Misc.Fly.Enabled = Value
+            end
+        })
+
+        Sections.MiscSection:AddSlider('FlySpeed', {
+            Text = 'Fly Speed',
+            Default = 15,
+            Min = 0,
+            Max = 100,
+            Rounding = 1,
+            Compact = false,
+        
+            Callback = function(Value)
+                Features.Misc.Fly.Speed = Value
+            end
+        })
+        
+    end
     
 end
 
@@ -211,6 +315,20 @@ do --// Logic
                     end
                 end
                 return EntityList
+                
+            end
+
+            function Functions.Players.GetLocalPlayer()
+
+                for i, Plrs in Functions.Players.GetPlayers() do
+                    if Plrs and Plrs:FindFirstChild("Root") then
+                        local Root = Plrs["Root"]
+                        local Distance = Functions.Math.Distance(Camera.CFrame.Position, Root.Position)
+                        if Distance < 5 then
+                            return Plrs
+                        end
+                    end
+                end
                 
             end
 
@@ -315,80 +433,135 @@ do --// Logic
     end
 
     do --// Loops
-
-        for i, Player in Functions.Players.GetPlayers() do
-            Functions.Esp.Create(Player)
-        end
         
         RunService.RenderStepped:Connect(function()
-
             do --// Aimbot
 
                 local Closest = Storage.Aimbot.ClosestPlayer
 
+                if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) and not Storage.Aimbot.ClosestPlayer then
+                    Storage.Aimbot.ClosestPlayer = Functions.Math.GetClosestPlayer()
+                end
+                
                 if Features.Combat.Aimbot.Enabled and Storage.Aimbot.ClosestPlayer ~= nil then
                     if Closest ~= nil and Closest:FindFirstChild("Body") and Closest["Body"]:FindFirstChild("Head") then
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, Closest["Body"]["Head"].Position + (Closest["Body"]["Chest"].Velocity * Features.Combat.Aimbot.Prediction))
+                        
+                        local Hitpart = Closest["Body"][Features.Combat.Aimbot.Hitpart]
+                        local TargetPos = Hitpart.Position
+                        
+                        if Features.Combat.Exploits.CameraManipulation.Enabled then
+                            Storage.Aimbot.ClosestPlayer:MoveTo(Camera.CFrame.Position + Camera.CFrame.LookVector * Features.Combat.Exploits.CameraManipulation.Distance - Vector3.new(0, 1, 0))
+                        end
+                        
+                        if Features.Combat.Aimbot.PredictionEnabled then
+
+                            local Prediction = 0
+                            if Features.Combat.Aimbot.AccountDistance then
+                                local Distance = (Camera.CFrame.Position - TargetPos).Magnitude
+                                local PredictionFactor = math.clamp((Distance - 5) / (1000 - 5), 0, 1) --// 5 = min dist, 1000 = max dist
+                                Prediction = Features.Combat.Aimbot.Prediction * PredictionFactor
+                            else
+                                Prediction = Features.Combat.Aimbot.Prediction
+                            end
+                            
+                            TargetPos = TargetPos + Hitpart.Velocity * Prediction
+
+                        end
+                        
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, TargetPos)
+
                     end
                 end
-
+                
+                
                 FOV.Position = UserInputService:GetMouseLocation()
 
             end
 
             do --// Visuals
 
+                for i, Plrs in Functions.Players.GetPlayers() do
+                    Functions.Esp.Create(Plrs)
+                end
+
                 for Player, Drawings in Storage.Drawing do
 
                     --// Drawing
-
+                
                     local Box = Drawings.Box
                     local Healthbar = Drawings.Bar
-
+                
                     if Player ~= nil and Player:FindFirstChild("Body") and Player:FindFirstChild("Health") then
                         
                         --// Character
-
+                
                         local Character = Player["Body"]
                         local Chest = Character["Chest"]
-
+                
                         --// Stats
-
+                
                         local Health = Player["Health"]
                         local MaxHealth = Health["MaxHealth"]
-
+                
                         --// Rest
-
+                
                         local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(Chest.Position)
                         if OnScreen then
-
-                            local Scale = 1000/Functions.Math.Distance(Camera.CFrame.Position, Chest.Position)*80/Camera.FieldOfView
-
-                            do --// Box
-
-                                Box.Visible = Features.Visuals.Box.Enabled and (not Features.Visuals.TeamCheck or not Functions.Players.IsTeammate(Player))
-                                Box.Position = Vector2.new(ScreenPosition.X - (Box.Size.X / 2), ScreenPosition.Y - (Box.Size.Y / 2))
-                                Box.Size = Vector2.new(3 * Scale, 4 * Scale)
-                                Box.Color = Features.Visuals.Box.Color
-                                
+                
+                            local Scale = 1000 / Functions.Math.Distance(Camera.CFrame.Position, Chest.Position) * 80 / Camera.FieldOfView
+                            local IsTeammate = Functions.Players.IsTeammate(Player)
+                            
+                            if not (Features.Visuals.TeamCheck and IsTeammate) then
+                                do --// Box
+                                    Box.Visible = Features.Visuals.Box.Enabled and (not Features.Visuals.TeamCheck or not IsTeammate)
+                                    Box.Position = Vector2.new(ScreenPosition.X - (Box.Size.X / 2), ScreenPosition.Y - (Box.Size.Y / 2))
+                                    Box.Size = Vector2.new(3 * Scale, 4 * Scale)
+                                    Box.Color = Features.Visuals.Box.Color
+                                end
+                
+                                do --// Healthbar
+                                    Healthbar.Visible = Features.Visuals.Health.Enabled and (not Features.Visuals.TeamCheck or not IsTeammate)
+                                    Healthbar.Size = Vector2.new(2, Box.Size.Y * Health.Value / MaxHealth.Value)
+                                    Healthbar.Position = Vector2.new(Box.Position.X - 5, Box.Position.Y + (Box.Size.Y * (1 - Health.Value / MaxHealth.Value)))
+                                    Healthbar.Color = Features.Visuals.Health.Color
+                                end
+                            else
+                                Functions.Esp.Clear(Player)
                             end
-
-                            do --// Healthbar
-
-                                Healthbar.Visible = Features.Visuals.Health.Enabled and (not Features.Visuals.TeamCheck or not Functions.Players.IsTeammate(Player))
-                                Healthbar.Size = Vector2.new(2, Box.Size.Y * Health.Value / MaxHealth.Value)
-                                Healthbar.Position = Vector2.new(Box.Position.X - 5, Box.Position.Y + (Box.Size.Y * (1 - Health.Value / MaxHealth.Value)))
-                                Healthbar.Color = Features.Visuals.Health.Color
-
-                            end
-
                         else
-
-                            Box.Visible = false
-                            Healthbar.Visible = false
-
+                            Functions.Esp.Clear(Player)
                         end
+                    end
+                end
+                
+            end
 
+            do --// Misc
+
+                if Functions.Players.GetLocalPlayer() ~= nil and Features.Misc.Fly.Enabled then
+
+                    local LocalPlayer = Functions.Players.GetLocalPlayer()
+                    local Root = LocalPlayer.Root
+                    local Speed = Features.Misc.Fly.Speed / 20
+                    local LookVector = Camera.CFrame.LookVector * Speed
+                    local Cross = LookVector:Cross(Vector3.new(0, 1, 0))
+            
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                        Root.CFrame = Root.CFrame + LookVector
+                    elseif UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                        Root.CFrame = Root.CFrame - LookVector
+                    end
+            
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                        Root.CFrame = Root.CFrame - Cross.Unit * Speed
+                    end
+            
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                        Root.CFrame = Root.CFrame + Cross.Unit * Speed
+                    end
+            
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                        Root.CFrame = Root.CFrame + Vector3.new(0, Speed*2, 0)
                     end
                 end
                 
@@ -400,18 +573,8 @@ do --// Logic
 
     do --// Connections
 
-        Players.ChildAdded:Connect(function(Player)
-            Functions.Esp.Create(Player)
-        end)
-
         Players.ChildRemoved:Connect(function(Player)
             Functions.Esp.Clear(Player)
-        end)
-
-        UserInputService.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton2 then
-                Storage.Aimbot.ClosestPlayer = Functions.Math.GetClosestPlayer()
-            end
         end)
 
         UserInputService.InputEnded:Connect(function(Input)
@@ -427,7 +590,6 @@ end
 do --// UI
 
     Library:SetWatermarkVisibility(true)
-
     Library.KeybindFrame.Visible = true;
     
     Library:OnUnload(function()
