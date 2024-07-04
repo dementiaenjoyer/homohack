@@ -7,7 +7,7 @@ local GameId = game.GameId
 
 local Games = {
     { name = "Bad Business", gameid = 1168263273, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad%20business.lua" },
-    { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua" },
+    { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua", rewrite = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rewrite.lua" },
     { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua" },
 }
 
@@ -20,9 +20,14 @@ end
 for i, Supported in Games do
     if Supported.gameid == GameId then
         Library:Notify("Homohack detected you being in " .. Supported.name .. ", now loading script...", 5)
-        loadstring(Fetch(Supported.link))()
 
-        return
+        if Supported.name:find("Phantom Forces") and getgenv()["load_rewrite"] then
+            loadstring(Fetch(Supported.rewrite))()
+            return "loaded rewrite"
+        end
+
+        loadstring(Fetch(Supported.link))()
+        return "loaded regular"
     end
 end
 
