@@ -8,8 +8,8 @@ local GameId = game.GameId
 local Games = {
     { name = "Rivals", gameid = 6035872082, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rivals.lua" },
     { name = "Bad Business", gameid = 1168263273, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad%20business.lua" },
-    { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua", rewrite = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rewrite.lua" },
-    { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua" },
+    { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/placeholder/chams.lua", rewrite = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/placeholder/chams.lua" },
+    { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/placeholder/chams.lua" },
 }
 
 function Fetch(URL)
