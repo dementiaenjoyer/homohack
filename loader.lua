@@ -19,10 +19,21 @@ end
 
 for _, Supported in Games do
     if Supported.gameid == GameId then
+
         Library:Notify(`homohack has detected you being in {Supported.name}.`, 5)
 
-        loadstring(Fetch(Supported.link))()
+        if Supported.name:find("Phantom") then
+            
+            run_on_actor(game:GetService("ReplicatedFirst")["lol"], [[
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf.lua"))()
+            ]])
+
+        else
+            loadstring(Fetch(Supported.link))()
+        end
+
         return "loaded regular"
+
     end
 end
 
