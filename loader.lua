@@ -23,10 +23,18 @@ for _, Supported in Games do
         Library:Notify(`homohack has detected you being in {Supported.name}.`, 5)
 
         if Supported.name:find("Phantom") then
-            
-            run_on_actor(game:GetService("ReplicatedFirst")["lol"], [[
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf.lua"))()
-            ]])
+
+            if run_on_actor then
+
+                run_on_actor(game:GetService("ReplicatedFirst")["lol"], [[
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf.lua"))()
+                ]])
+
+            else
+
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua"))()
+                
+            end
 
         else
             loadstring(Fetch(Supported.link))()
