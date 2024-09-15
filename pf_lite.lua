@@ -280,6 +280,7 @@ end
 --
 
 local fov_circle = Drawing.new("Circle");
+fov_circle.Filled = false;
 
 -- main
 
@@ -349,6 +350,7 @@ local main_renderstepped = run_service.RenderStepped:Connect(function(dt)
                     box_square.Thickness = 1;
                     box_square.Position = vec2(round(w2s.X - (box_square.Size.X / 2)), round(w2s.Y - (box_square.Size.Y / 2)));
                     box_square.Size = box_scale;
+                    box_square.Filled = false;
 
                     -- tracers
 
