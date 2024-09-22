@@ -7,8 +7,8 @@ local GameId = game.GameId
 
 local Games = {
     { name = "Rivals", gameid = 6035872082, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rivals.lua" },
-    { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua"},
-    { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/homohack.lua" },
+    { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua"},
+    { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua" },
 }
 
 function Fetch(URL)
@@ -22,23 +22,7 @@ for _, Supported in Games do
 
         Library:Notify(`homohack has detected you being in {Supported.name}.`, 5)
 
-        if Supported.name:find("Phantom") then
-
-            if run_on_actor then
-
-                run_on_actor(game:GetService("ReplicatedFirst")["lol"], [[
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf.lua"))()
-                ]])
-
-            else
-
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua"))()
-                
-            end
-
-        else
-            loadstring(Fetch(Supported.link))()
-        end
+        loadstring(Fetch(Supported.link))()
 
         return "loaded regular"
 
