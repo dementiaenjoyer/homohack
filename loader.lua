@@ -9,6 +9,7 @@ local Games = {
     { name = "Rivals", gameid = 6035872082, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rivals.lua" },
     { name = "Phantom Forces", gameid = 113491250, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua"},
     { name = "Phantom Forces Test Place", gameid = 115272207, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua" },
+    { name = "Bad Business", gameid = 1168263273, link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad_business.lua" },
 }
 
 function Fetch(URL)
@@ -19,13 +20,11 @@ end
 
 for _, Supported in Games do
     if Supported.gameid == GameId then
-
         Library:Notify(`homohack has detected you being in {Supported.name}.`, 5)
 
         loadstring(Fetch(Supported.link))()
 
         return "loaded regular"
-
     end
 end
 
