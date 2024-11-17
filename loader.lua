@@ -34,10 +34,9 @@ local custom_callbacks = {
 		task.spawn(messagebox, "joining scorched earth..", "homohack", 0);
 
 		teleport_service:Teleport(13794093709, players.LocalPlayer);
-		
 		queue_on_teleport([[
-    		task.wait(4);
-    		loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
+    			task.wait(4);
+    			loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
 		]])
 	end,
 };
@@ -49,8 +48,8 @@ holder_stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
 -- ui
 do
 	local dragging = false;
-	local mouse_start = nil
-	local frame_start = nil
+	local mouse_start = nil;
+	local frame_start = nil;
 	
 	local main = Instance.new("Frame", loader); do
 		main.BackgroundColor3 = Color3.fromRGB(12, 12, 12);
@@ -76,15 +75,15 @@ do
 		title.InputBegan:Connect(function(input)
 			if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 				dragging = true;
-				mouse_start = user_input_service:GetMouseLocation()
-				frame_start = main.Position
+				mouse_start = user_input_service:GetMouseLocation();
+				frame_start = main.Position;
 			end
 		end)
 
 		user_input_service.InputChanged:Connect(function(input)
 			if (dragging and input.UserInputType == Enum.UserInputType.MouseMovement) then
 				local delta = user_input_service:GetMouseLocation() - mouse_start;
-				tween_service:Create(main, TweenInfo.new(0.1), {Position = UDim2.new(frame_start.X.Scale, frame_start.X.Offset + delta.X, frame_start.Y.Scale, frame_start.Y.Offset + delta.Y)}):Play()
+				tween_service:Create(main, TweenInfo.new(0.1), {Position = UDim2.new(frame_start.X.Scale, frame_start.X.Offset + delta.X, frame_start.Y.Scale, frame_start.Y.Offset + delta.Y)}):Play();
 			end
 		end)
 		
