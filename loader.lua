@@ -157,11 +157,10 @@ do
 				
 				if (not custom_callback) then
 					loader:Destroy();
-					heartbeat:Disconnect();
-					
 					return loadstring(game:HttpGet(supported_game.link))();
 				end
-				
+
+				heartbeat:Disconnect();
 				custom_callback();
 			end);
 			
