@@ -22,16 +22,13 @@ local custom_callbacks = {
 		local players = game:GetService("Players");
 
 		if (game.GameId == 4785126950) then
-			task.spawn(messagebox, "Run the scorched earth script inside of another game, like 'a literal baseplate'. Homohack will teleport you", "homohack", 0);
-			game:Shutdown();
+			players.LocalPlayer:Kick("Run the scorched earth script inside of another game, like 'a literal baseplate'. Homohack will teleport you");
 			return;
 		end
 
 		if (string.lower(getfflag("DebugRunParallelLuaOnMainThread")) ~= "true" ) then
 			setfflag("DebugRunParallelLuaOnMainThread", "True");
 		end
-
-		task.spawn(messagebox, "joining scorched earth..", "homohack", 0);
 
 		teleport_service:Teleport(13794093709, players.LocalPlayer);
 		queue_on_teleport([[
