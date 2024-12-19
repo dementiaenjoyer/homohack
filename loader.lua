@@ -13,6 +13,7 @@ local games = {
 	{ name = "Phantom Forces Test Place", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua" },
 	{ name = "Bad Business", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad_business.lua" },
 	{ name = "Universal", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/universal.lua"},
+	{ name = "Fisch", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/fisch.lua"},
 	{ name = "Scorched Earth"},
 };
 
