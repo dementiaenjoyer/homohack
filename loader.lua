@@ -10,6 +10,7 @@ local loader = Instance.new("ScreenGui", core_gui);
 local games = {
 	{ name = "Rivals", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rivals.lua" },
 	{ name = "Phantom Forces", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua"},
+    { name = "Phantom Forces Rewrite (DEMO)", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_lite_rewrite_demo"},
 	{ name = "Phantom Forces Test Place", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua" },
 	{ name = "Bad Business", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad_business.lua" },
 	{ name = "Universal", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/universal.lua"},
@@ -20,22 +21,24 @@ local games = {
 local custom_callbacks = {
 	["Scorched Earth"] = function()
 		local teleport_service = game:GetService("TeleportService");
-		local players = game:GetService("Players");
 
 		if (game.GameId == 4785126950) then
 			players.LocalPlayer:Kick("Run the scorched earth script inside of another game, like 'a literal baseplate'. Homohack will teleport you");
 			return;
 		end
 
-		if (string.lower(getfflag("DebugRunParallelLuaOnMainThread")) ~= "true" ) then
-			setfflag("DebugRunParallelLuaOnMainThread", "True");
-		end
+        local get_fflag = getfflag("DebugRunParallelLuaOnMainThread");
+        if (typeof(get_fflag) == "string" and string.lower(get_fflag) ~= "true") then
+            setfflag("DebugRunParallelLuaOnMainThread", "True");
+        elseif (typeof(get_fflag) == "boolean" and get_fflag) then
+            setfflag("DebugRunParallelLuaOnMainThread", "True");
+        end
 
 		teleport_service:Teleport(13794093709, players.LocalPlayer);
 		queue_on_teleport([[
     			task.wait(4);
     			loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
-		]])
+		]]);
 	end,
 };
 
