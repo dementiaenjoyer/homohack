@@ -9,9 +9,7 @@ local loader = Instance.new("ScreenGui", core_gui);
 
 local games = {
 	{ name = "Rivals", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/rivals.lua" },
-	{ name = "Phantom Forces", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua"},
-    { name = "Phantom Forces Rewrite (DEMO)", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_lite_rewrite_demo"},
-	{ name = "Phantom Forces Test Place", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/pf_lite.lua" },
+	{ name = "Phantom Forces", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_lite_rewrite_demo"},
 	{ name = "Bad Business", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad_business.lua" },
 	{ name = "Universal", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/universal.lua"},
 	{ name = "Fisch", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/fisch.lua"},
@@ -36,8 +34,8 @@ local custom_callbacks = {
 
 		teleport_service:Teleport(13794093709, players.LocalPlayer);
 		queue_on_teleport([[
-    			task.wait(4);
-    			loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
+    		repeat task.wait() until game:IsLoaded();
+    		loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
 		]]);
 	end,
 };
