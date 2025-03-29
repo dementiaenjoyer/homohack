@@ -1,4 +1,3 @@
-# Completely free forever Phantom Forces modification. 
+# Free Phantom Forces and Bad Business modification which supports all executors.
 
-Made by @dementia enjoyer
-(eldmonstret on discord)
+Made by @dementia_enjoyr on discord. Direct message me if you need anything
