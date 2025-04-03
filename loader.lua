@@ -11,6 +11,7 @@ local games = {
 	{ name = "Phantom Forces", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_lite_rewrite_demo"},
 	{ name = "Bad Business", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad_business.lua" },
 	{ name = "Fisch", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/fisch.lua"},
+    { name = "Frontlines" },
 	{ name = "Scorched Earth"},
 };
 
@@ -23,12 +24,7 @@ local custom_callbacks = {
 			return;
 		end
 
-        local get_fflag = getfflag("DebugRunParallelLuaOnMainThread");
-        if (typeof(get_fflag) == "string" and string.lower(get_fflag) ~= "true") then
-            setfflag("DebugRunParallelLuaOnMainThread", "True");
-        elseif (typeof(get_fflag) == "boolean" and get_fflag) then
-            setfflag("DebugRunParallelLuaOnMainThread", "True");
-        end
+        setfflag("DebugRunParallelLuaOnMainThread", "True");
 
 		teleport_service:Teleport(13794093709, players.LocalPlayer);
 		queue_on_teleport([[
@@ -36,6 +32,28 @@ local custom_callbacks = {
     		loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
 		]]);
 	end,
+
+    ["Frontlines"] = function()
+        local success = false;
+
+        if (run_on_actor) then
+            success = true;
+
+            run_on_actor(getactors()[1], [=[
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/frontlines.lua"))();
+            ]=]);
+        elseif (run_on_thread and getactorthreads) then
+            success = true;
+
+            run_on_thread(getactorthreads()[1], [=[
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/frontlines.lua"))();
+            ]=]);
+        end
+
+        if (not success) then
+            players.LocalPlayer:Kick("Your executor does not support 'run_on_actor' or 'run_on_thread'");
+        end
+    end
 };
 
 local holder_stroke = Instance.new("UIStroke");
@@ -146,19 +164,21 @@ do
 	end
 	
 	local heartbeat = nil;
-	for _, supported_game in games do		
+
+	for _, supported_game in games do
 		local name = supported_game.name;
 		local text_button = Instance.new("TextButton", scrolling_frame); do
 			text_button.MouseButton1Click:Connect(function()
 				local custom_callback = custom_callbacks[name];
 				
 				if (not custom_callback) then
-					loader:Destroy();
-					return loadstring(game:HttpGet(supported_game.link))();
+					loadstring(game:HttpGet(supported_game.link))();
+                else
+                    custom_callback();
 				end
 
-				heartbeat:Disconnect();
-				custom_callback();
+                heartbeat:Disconnect();
+                loader:Destroy();
 			end);
 			
 			text_button.Text = `load {supported_game.name}`;
