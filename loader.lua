@@ -1,207 +1,329 @@
--- this code is awful so dont mind it plz
-local players = game:GetService("Players");
-local run_service = game:GetService("RunService");
-local user_input_service = game:GetService("UserInputService");
-local tween_service = game:GetService("TweenService");
-local core_gui = game:GetService("CoreGui");
+local cloneref = cloneref or function(Service) return Service; end
 
-local loader = Instance.new("ScreenGui", core_gui);
+-- Services
+local function GetService(Service)
+	return cloneref(game:GetService(Service));
+end
 
-local games = {
-	{ name = "Phantom Forces", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_lite_rewrite_demo"},
-	{ name = "Bad Business", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/main/bad_business.lua" },
-	{ name = "Fisch", link = "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/fisch.lua"},
-    { name = "Frontlines" },
-	{ name = "Scorched Earth"},
-};
+local HttpService = GetService("HttpService");
+local Players = GetService("Players");
+local RunService = GetService("RunService");
 
-local custom_callbacks = {
-	["Scorched Earth"] = function()
-		local teleport_service = game:GetService("TeleportService");
+-- Functions
+local Loader = {};
+Loader.SELECTED = "";
 
-		if (game.GameId == 4785126950) then
-			players.LocalPlayer:Kick("Run the scorched earth script inside of another game, like 'a literal baseplate'. Homohack will teleport you");
-			return;
+local Github = {}; do
+	Github.USER_AGENT = "homohack";
+	Github.ERROR = "Failed to retrieve";
+
+	Github.OWNER = "dementiaenjoyer";
+	Github.REPO = "homohack";
+	Github.URL = "https://api.github.com";
+
+	function Github:GetUpdate(Name)
+		local Error = self.ERROR;
+		local Success, Response = pcall(function()
+			return game:HttpGet(string.format("%s/repos/%s/%s/commits?path=%s&per_page=1", self.URL, self.OWNER, self.REPO, HttpService:UrlEncode(Name)), false, {
+				["User-Agent"] = self.USER_AGENT,
+				["Accept"] = "application/vnd.github.v3+json"
+			});
+		end)
+
+		if (not Success) then
+			return Error;
 		end
 
-        setfflag("DebugRunParallelLuaOnMainThread", "True");
+		local RetrievedCommits, Commits = pcall(function()
+			return HttpService:JSONDecode(Response);
+		end)
 
-		teleport_service:Teleport(13794093709, players.LocalPlayer);
-		queue_on_teleport([[
-    		repeat task.wait() until game:IsLoaded();
-    		loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/scorched_earth.lua"))();
-		]]);
-	end,
+		if (not RetrievedCommits) then
+			return Error;
+		end
 
-    ["Frontlines"] = function()
-        local success = false;
+		if (typeof(Commits) ~= "table" or #Commits == 0) then
+			return Error;
+		end
 
-        if (run_on_actor) then
-            success = true;
+		local LatestUpdate = Commits[1];
 
-            run_on_actor(getactors()[1], [=[
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/frontlines.lua"))();
-            ]=]);
-        elseif (run_on_thread and getactorthreads) then
-            success = true;
+		if (not LatestUpdate or not LatestUpdate.commit) then
+			return Error;
+		end
 
-            run_on_thread(getactorthreads()[1], [=[
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/frontlines.lua"))();
-            ]=]);
-        end
+		LatestUpdate = LatestUpdate.commit;
 
-        if (not success) then
-            players.LocalPlayer:Kick("Your executor does not support 'run_on_actor' or 'run_on_thread'");
-        end
-    end
-};
+		return LatestUpdate.author.date, LatestUpdate.message;
+	end
 
-local holder_stroke = Instance.new("UIStroke");
-holder_stroke.Color = Color3.fromRGB(24, 24, 24);
-holder_stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+	function Github:GetAllFiles()
+		local Success, Response = pcall(function()
+			return game:HttpGet(string.format("%s/repos/%s/%s/contents/%s", self.URL, self.OWNER, self.REPO, ""), true, {
+				["User-Agent"] = self.USER_AGENT,
+				["Accept"] = "application/vnd.github.v3+json"
+			});
+		end)
 
--- ui
+		if (not Response) then
+			return {};
+		end
+
+		local Success, Files = pcall(function()
+			return HttpService:JSONDecode(Response);
+		end)
+
+		return Files;
+	end
+end
+
+local Elements = {}; do
+	function Elements:New(Class, Properties)
+		local Object = Instance.new(Class);
+
+		for Property, Value in Properties do
+			Object[Property] = Value;
+		end
+
+		return Object;
+	end
+end
+
+-- Variables
+local LocalPlayer = Players.LocalPlayer;
+local PlayerGui = (RunService:IsStudio() and LocalPlayer.PlayerGui) or GetService("CoreGui");
+
+local GothamFont = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal);
+
+-- Main
 do
-	local dragging = false;
-	local mouse_start = nil;
-	local frame_start = nil;
-	
-	local main = Instance.new("Frame", loader); do
-		main.BackgroundColor3 = Color3.fromRGB(12, 12, 12);
-		main.BorderColor3 = Color3.fromRGB(0, 0, 0);
-		main.BorderSizePixel = 0;
-		main.Position = UDim2.new(0.427201211, 0, 0.393133998, 0);
-		main.Size = UDim2.new(0.145, 0, 0.267, 0, 0);
-	end
-	
-	local title = Instance.new("TextLabel", main); do
-		title.BackgroundColor3 = Color3.fromRGB(13, 13, 13);
-		title.BorderColor3 = Color3.fromRGB(0, 0, 0);
-		title.BorderSizePixel = 0;
-		title.Position = UDim2.new(0.0361463465, 0, 0.0199999996, 0);
-		title.Size = UDim2.new(0.926784515, 0, 0.112490386, 0);
-		title.Font = Enum.Font.RobotoMono;
-		title.Text = "homohack";
-		title.TextColor3 = Color3.fromRGB(255, 255, 255);
-		title.TextStrokeTransparency = 0.000;
-		title.TextWrapped = true;
-		title.TextSize = 18;
-		
-		title.InputBegan:Connect(function(input)
-			if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-				dragging = true;
-				mouse_start = user_input_service:GetMouseLocation();
-				frame_start = main.Position;
-			end
-		end)
+	local LoaderUI = Elements:New("ScreenGui", {
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+		Parent = PlayerGui;
+	});
 
-		user_input_service.InputChanged:Connect(function(input)
-			if (dragging and input.UserInputType == Enum.UserInputType.MouseMovement) then
-				local delta = user_input_service:GetMouseLocation() - mouse_start;
-				tween_service:Create(main, TweenInfo.new(0.1), {Position = UDim2.new(frame_start.X.Scale, frame_start.X.Offset + delta.X, frame_start.Y.Scale, frame_start.Y.Offset + delta.Y)}):Play();
+	local Holder = Elements:New("Frame", {
+		BorderSizePixel = 0;
+		BackgroundColor3 = Color3.fromRGB(16, 16, 16);
+		Size = UDim2.new(0.271032, 0, 0.445187, 0);
+		Position = UDim2.new(0.364177, 0, 0.27664, 0);
+		BorderColor3 = Color3.fromRGB(0, 0, 0);
+		Parent = LoaderUI;
+	}); do
+		local Bottom = Elements:New("Frame", {
+			BorderSizePixel = 0;
+			BackgroundColor3 = Color3.fromRGB(22, 22, 22);
+			Size = UDim2.new(1, 0, 0.119911, 0);
+			Position = UDim2.new(-4.20141e-07, 0, 0.878709, 0);
+			BorderColor3 = Color3.fromRGB(0, 0, 0);
+			Parent = Holder;
+		});
+
+		local UIStroke_4 = Elements:New("UIStroke", {
+			Color = Color3.fromRGB(45, 45, 45);
+			Parent = Bottom;
+		});
+
+		local UICorner_4 = Elements:New("UICorner", {
+			CornerRadius = UDim.new(0, 4);
+			Parent = Bottom;
+		});
+
+		local LoadButton = Elements:New("TextButton", {
+			TextWrapped = true;
+			BorderSizePixel = 0;
+			AutoButtonColor = false;
+			TextScaled = true;
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24);
+			FontFace = GothamFont;
+			TextSize = 14;
+			Size = UDim2.new(0.366775, 0, 0.725145, 0);
+			Position = UDim2.new(0.614016, 0, 0.124863, 0);
+			TextColor3 = Color3.fromRGB(255, 255, 255);
+			BorderColor3 = Color3.fromRGB(0, 0, 0);
+			Text = "Load";
+			Parent = Bottom;
+		}); do
+			local UICorner_3 = Elements:New("UICorner", {
+				CornerRadius = UDim.new(0, 4);
+				Parent = LoadButton;
+			});
+
+			local UIStroke_3 = Elements:New("UIStroke", {
+				Color = Color3.fromRGB(45, 45, 45);
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+				Parent = LoadButton;
+			});
+
+			LoadButton.MouseButton1Click:Connect(function()
+				local Selected = Loader.SELECTED;
+
+				if (string.len(Selected) == 0) then
+					return;
+				end
+
+				loadstring(game:HttpGet(`https://raw.githubusercontent.com/{Github.OWNER}/{Github.REPO}/refs/heads/main/{Selected}`))();
+
+				return LoaderUI:Destroy();
+			end)
+		end
+
+		local LastUpdate = Elements:New("TextLabel", {
+			TextWrapped = true;
+			BorderSizePixel = 0;
+			TextScaled = true;
+			BackgroundColor3 = Color3.fromRGB(24, 24, 24);
+			FontFace = GothamFont;
+			Position = UDim2.new(0.0247809, 0, 0.124863, 0);
+			TextSize = 14;
+			Size = UDim2.new(0.565022, 0, 0.725144, 0);
+			TextColor3 = Color3.fromRGB(255, 255, 255);
+			BorderColor3 = Color3.fromRGB(0, 0, 0);
+			Text = "Updated: Reselect to refresh.";
+			Parent = Bottom;
+		}); do
+			local UICorner_5 = Elements:New("UICorner", {
+				CornerRadius = UDim.new(0, 4);
+				Parent = LastUpdate;
+			});
+
+			local UIStroke_5 = Elements:New("UIStroke", {
+				Color = Color3.fromRGB(45, 45, 45);
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+				Parent = LastUpdate;
+			});
+		end
+
+		local ScrollingFrame = Elements:New("ScrollingFrame", {
+			BorderSizePixel = 0;
+			MidImage = "rbxassetid://132155326";
+			TopImage = "";
+			Position = UDim2.new(-0.00295157, 0, 0.127748, 0);
+			BackgroundTransparency = 1;
+			AutomaticCanvasSize = Enum.AutomaticSize.Y;
+			Active = true;
+			BorderColor3 = Color3.fromRGB(0, 0, 0);
+			Size = UDim2.new(1.00295, 0, 0.75096, 0);
+			ScrollBarImageColor3 = Color3.fromRGB(31, 31, 31);
+			ScrollBarThickness = 8; 
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+			BottomImage = "rbxassetid://0";
+			Parent = Holder;
+		}); do
+			local UIPadding = Elements:New("UIPadding", {
+				PaddingTop = UDim.new(0, 15);
+				Parent = ScrollingFrame;
+			});
+
+			local UIGridLayout = Elements:New("UIGridLayout", {
+				CellSize = UDim2.new(0.9, 0, 0.15, 0);
+				SortOrder = Enum.SortOrder.LayoutOrder;
+				HorizontalAlignment = Enum.HorizontalAlignment.Center;
+				Parent = ScrollingFrame;
+			});
+
+			local BLACKLISTED_NAMES = {"LICENSE", "README.md", "loader.lua"};
+
+			for _, Data in Github:GetAllFiles() do
+				local Name = Data.name;
+
+				if (not Name) or (Data.type ~= "file") or (table.find(BLACKLISTED_NAMES, Name)) then
+					continue;
+				end
+
+				local Template = Elements:New("Frame", {
+					BorderSizePixel = 0;
+					BackgroundColor3 = Color3.fromRGB(24, 24, 24);
+					Size = UDim2.new(0.0746269, 0, 0.118483, 0);
+					BorderColor3 = Color3.fromRGB(0, 0, 0);
+					Parent = ScrollingFrame;
+				}); do
+					local UIStroke_2 = Elements:New("UIStroke", {
+						Color = Color3.fromRGB(45, 45, 45);
+						Parent = Template;
+					});
+
+					local UICorner_2 = Elements:New("UICorner", {
+						CornerRadius = UDim.new(0, 4);
+						Parent = Template;
+					});
+
+					local TextButton = Elements:New("TextButton", {
+						TextWrapped = true;
+						BorderSizePixel = 0;
+						TextScaled = true;
+						BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+						FontFace = GothamFont;
+						TextSize = 14;
+						Size = UDim2.new(1, 0, 1, 0);
+						TextColor3 = Color3.fromRGB(255, 255, 255);
+						BorderColor3 = Color3.fromRGB(0, 0, 0);
+						Text = `Select {string.upper(Name)}`;
+						BackgroundTransparency = 1;
+						Parent = Template;
+					}); do
+						TextButton.MouseButton1Click:Connect(function()
+							Loader.SELECTED = Name;
+							LastUpdate.Text = `Updated: {Github:GetUpdate(Name)}`;
+						end)
+					end
+				end
 			end
-		end)
-		
-		user_input_service.InputEnded:Connect(function(input)
-			if (dragging) then
-				dragging = false;
-			end
-		end)
+		end
 	end
-	
-	local ui_stroke = Instance.new("UIStroke", main); do
-		ui_stroke.Thickness = 2;
-		ui_stroke.Color = Color3.fromRGB(255, 255, 255);
-	end
-	
-	local ui_gradient = Instance.new("UIGradient", ui_stroke); do
-		ui_gradient.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 70, 73)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+
+	local UIStroke = Elements:New("UIStroke", {
+		Color = Color3.fromRGB(45, 45, 45);
+		Parent = Holder;
+	});
+
+	local Top = Elements:New("Frame", {
+		BorderSizePixel = 0;
+		BackgroundColor3 = Color3.fromRGB(22, 22, 22);
+		Size = UDim2.new(1, 0, 0.127896, 0);
+		Position = UDim2.new(-3.86005e-07, 0, 0, 0);
+		BorderColor3 = Color3.fromRGB(0, 0, 0);
+		Parent = Holder;
+	}); do
+		local Title = Elements:New("TextLabel", {
+			Text = "homohack";
+			TextWrapped = true;
+			BorderSizePixel = 0;
+			TextScaled = true;
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+			FontFace = GothamFont;
+			TextSize = 14;
+			Size = UDim2.new(1, 0, 1, 0);
+			TextColor3 = Color3.fromRGB(255, 255, 255);
+			BorderColor3 = Color3.fromRGB(0, 0, 0);
+			BackgroundTransparency = 1;
+			Parent = Top;
+		}); do
+			local UIGradient = Elements:New("UIGradient", {
+				Color = ColorSequence.new{ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)), ColorSequenceKeypoint.new(0.166, Color3.fromRGB(255, 255, 0)), ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 255, 255)), ColorSequenceKeypoint.new(0.66, Color3.fromRGB(0, 0, 255)), ColorSequenceKeypoint.new(0.833, Color3.fromRGB(255, 0, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0)) };
+				Parent = Title;
+			});
+		end
+
+		local UIDragDetector = Elements:New("UIDragDetector", {
+			BoundingUI = LoaderUI;
+			ReferenceUIInstance = Top;
+			Parent = Holder;
+		});
+
+		local UICorner = Elements:New("UICorner", {
+			CornerRadius = UDim.new(0, 4);
+			Parent = Top;
+		});
+
+		local UIStroke_1 = Elements:New("UIStroke", {
+			Color = Color3.fromRGB(45, 45, 45);
+			Parent = Top;
 		});
 	end
 
-	local ui_corner = Instance.new("UICorner", title); do
-		ui_corner.CornerRadius = UDim.new(0, 2);
-	end
-
-	local holder = Instance.new("Frame", main); do
-		holder.BackgroundColor3 = Color3.fromRGB(13, 13, 13);
-		holder.BorderColor3 = Color3.fromRGB(0, 0, 0);
-		holder.BorderSizePixel = 0;
-		holder.Position = UDim2.new(0.0361457169, 0, 0.167407826, 0);
-		holder.Size = UDim2.new(0.926784515, 0, 0.781875908, 0);
-	end
-	
-	local stroke = holder_stroke:Clone(); do
-		stroke.Parent = holder;
-	end
-
-	local ui_corner_2 = Instance.new("UICorner", holder); do
-		ui_corner_2.CornerRadius = UDim.new(0, 4);
-	end
-
-	local scrolling_frame = Instance.new("ScrollingFrame", holder); do
-		scrolling_frame.Active = true;
-		scrolling_frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-		scrolling_frame.BackgroundTransparency = 1.000;
-		scrolling_frame.BorderColor3 = Color3.fromRGB(0, 0, 0);
-		scrolling_frame.BorderSizePixel = 0;
-		scrolling_frame.Position = UDim2.new(0, 0, 3.04931473e-06, 0);
-		scrolling_frame.Size = UDim2.new(1, 0, 0.999999821, 0);
-		scrolling_frame.CanvasSize = UDim2.new(0, 0, 5, 0);
-	end
-
-	local ui_padding = Instance.new("UIPadding", scrolling_frame); do
-		ui_padding.PaddingTop = UDim.new(0, 10);
-	end
-
-	local ui_grid_layout = Instance.new("UIGridLayout", scrolling_frame); do
-		ui_grid_layout.HorizontalAlignment = Enum.HorizontalAlignment.Center;
-		ui_grid_layout.SortOrder = Enum.SortOrder.LayoutOrder;
-		ui_grid_layout.CellPadding = UDim2.new(0, 10, 0, 10);
-		ui_grid_layout.CellSize = UDim2.new(0, 165, 0, 25);
-	end
-	
-	local heartbeat = nil;
-
-	for _, supported_game in games do
-		local name = supported_game.name;
-		local text_button = Instance.new("TextButton", scrolling_frame); do
-			text_button.MouseButton1Click:Connect(function()
-				local custom_callback = custom_callbacks[name];
-				
-				if (not custom_callback) then
-					loadstring(game:HttpGet(supported_game.link))();
-                else
-                    custom_callback();
-				end
-
-                heartbeat:Disconnect();
-                loader:Destroy();
-			end);
-			
-			text_button.Text = `load {supported_game.name}`;
-			text_button.BackgroundColor3 = Color3.fromRGB(14, 14, 14);
-			text_button.BorderColor3 = Color3.fromRGB(0, 0, 0);
-			text_button.BorderSizePixel = 0;
-			text_button.Size = UDim2.new(0.14958863, 0, 0.0553709865, 0);
-			text_button.Font = Enum.Font.RobotoMono;
-			text_button.TextColor3 = Color3.fromRGB(255, 255, 255);
-			text_button.TextSize = 12.000;
-			text_button.TextWrapped = true;
-		end
-
-		local stroke = holder_stroke:Clone(); do
-			stroke.Parent = text_button;
-		end
-
-		local ui_corner_3 = Instance.new("UICorner", text_button); do
-			ui_corner_3.CornerRadius = UDim.new(0, 4);
-		end
-	end
-	
-	heartbeat = run_service.Heartbeat:Connect(function()
-		ui_gradient.Rotation += 4;
-	end)
+	local UICorner_1 = Elements:New("UICorner", {
+		CornerRadius = UDim.new(0, 4);
+		Parent = Holder;
+	});
 end
