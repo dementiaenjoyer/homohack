@@ -24,7 +24,7 @@ local Actor = GetNeeded()[1];
 
 if (not Actor) then
     (setclipboard or function() end)("https://www.youtube.com/watch?v=wr__SjSUjAU");
-    return LocalPlayer:Kick("Couldn't find an actor or a thread to run script on. Here's a youtube video on how to fix / get around this: https://www.youtube.com/watch?v=wr__SjSUjAU");
+    return LocalPlayer:Kick("Couldn't find an actor or a thread to run script on. Here's a youtube video on how to fix / get around this: https://www.youtube.com/watch?v=wr__SjSUjAU (REMOVE THE FFLAG AFTER YOU'RE DONE PLAYING, SOME GAMES BAN YOU FOR IT)");
 end
 
 local Success, Error = pcall((run_on_thread or run_on_actor), Actor, [===[
