@@ -5,7 +5,7 @@ local Players = game:GetService("Players");
 local LocalPlayer = Players.LocalPlayer;
 
 local GetNeeded = (getactorthreads or (function()
-    return function()
+    return getdeletedactors or function()
         local Actors = { };
 
         for _, Descendant in game:GetDescendants() do
