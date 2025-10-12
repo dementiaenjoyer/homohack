@@ -39,7 +39,7 @@ end)()) or { };
 
 if ((not RunOnActor) or (not RunOnThread)) then
     if (QueueOnTeleport) then
-        (setfflag or function() end)("DebugRunParallelLuaOnMainThread", true);
+        (setfflag or function() end)("DebugRunParallelLuaOnMainThread", "True");
 
         QueueOnTeleport([[
             local Players = cloneref(game:GetService("Players"));
