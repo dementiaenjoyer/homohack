@@ -51,7 +51,8 @@ if ((not RunOnActor) or (not RunOnThread)) then
             loadstring(string.match(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_main.lua"), "%[%=%=%=%[(.-)%]%=%=%=%]"))();
         ]]);
 
-        return TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer, nil, nil, nil);
+        TeleportService:TeleportToPlaceInstance(PlaceId, JobId, LocalPlayer, nil, nil, nil);
+        return TeleportService:Teleport(PlaceId, LocalPlayer, nil, nil);
     end
 
     (setclipboard or function() end)("https://www.youtube.com/watch?v=wr__SjSUjAU");
