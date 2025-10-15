@@ -37,7 +37,7 @@ local GetNeeded = PrioritizedFunction and (GetActorThreads or (function()
     end
 end)()) or { };
 
-if ((not RunOnActor) or (not RunOnThread)) then
+if ((not RunOnActor) and (not RunOnThread)) then
     if (QueueOnTeleport) then
         (setfflag or function() end)("DebugRunParallelLuaOnMainThread", "True");
 
