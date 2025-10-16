@@ -7,11 +7,11 @@ end;
 
 writefile("homohack_script.lua", string.match(game:HttpGet("https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/pf_main.lua"), "%[%=%=%=%[(.-)%]%=%=%=%]"));
 
-QueueOnTeleport([==[
+(QueueOnTeleport or function() end)([==[
     if (game.GameId ~= 113491250) then
         return;
     end;
-
+    
     loadstring(readfile("homohack_script.lua"))();
 ]==]);
 
