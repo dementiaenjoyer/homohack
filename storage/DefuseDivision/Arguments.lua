@@ -1,1 +1,0 @@
-return "don\'t worry I\'ll rewrite it soon ;3";
