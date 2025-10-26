@@ -74,7 +74,7 @@
 -- PAWEL DO YOU WANT TO ERP 🤤🤤🤤🤤 YOURE SO HOT 🤤🤤🤤🤤
 ]]
 
-getgenv().Pawel12Diddy = "don\'t worry I\'ll rewrite it soon ;3";
+getgenv().Pawel12Diddy = "really? that's amazing!";
 
 -- Bypass
 do
