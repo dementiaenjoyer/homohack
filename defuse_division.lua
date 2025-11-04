@@ -1,1 +1,1 @@
-game:GetService("Players").LocalPlayer:Kick(”Script is down at the moment");
+game:GetService("Players").LocalPlayer:Kick("Script is down at the moment");
