@@ -128,9 +128,9 @@ local SaveManager = {} do
 			end
 		end
 
-    if self.OnConfigLoaded then
-	      task.defer(self.OnConfigLoaded, name)
-    end
+        if self.OnConfigLoaded then
+	          task.defer(self.OnConfigLoaded, decoded)
+        end
 
 		return true
 	end
