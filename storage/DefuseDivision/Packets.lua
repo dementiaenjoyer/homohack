@@ -1,21 +1,21 @@
 return {["Hit"] = {
-    Weapon,
-    Workspace:GetServerTimeNow(),
-    { Origin },
+    "Weapon",
+    "Workspace:GetServerTimeNow()",
+    { "Origin" },
     {
         {
             nil,
             {
                 {
-                    HitPart,
-                    Destination
+                    "HitPart",
+                    "Destination"
                 }
             }
         }
     }, {
-        false, RegistrationCount, { 1 }, false -- i am pretty sure the '1' represents the pelletcount, but i am not entirely sure.
+        false, "RegistrationCount", { 1 }, false -- i am pretty sure the '1' represents the pelletcount, but i am not entirely sure.
     },
     {
-        {Y = Destination.Y, X = Destination.X, Z = Destination.Z}
+        {Y = "Destination.Y", X = "Destination.X", Z = "Destination.Z"}
     }
 }};
