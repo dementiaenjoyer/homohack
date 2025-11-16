@@ -16,6 +16,6 @@ return {["Hit"] = {
         false, "RegistrationCount", { 1 }, false -- i am pretty sure the '1' represents the pelletcount, but i am not entirely sure.
     },
     {
-        {Y = "DestinationY", X = "DestinationX", Z = "DestinationZ"}
+        {Y = "OriginY", X = "OriginX", Z = "OriginZ"}
     }
 }};
