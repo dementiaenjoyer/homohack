@@ -4,7 +4,7 @@ return {["Hit"] = {
     { "Origin" },
     {
         {
-            nil,
+            "Destination",
             {
                 {
                     "HitPart",
