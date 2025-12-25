@@ -162,9 +162,8 @@ do
 					return;
 				end
 
-				loadstring(game:HttpGet(`https://raw.githubusercontent.com/{Github.OWNER}/{Github.REPO}/refs/heads/main/{Selected}`))();
-
-				return LoaderUI:Destroy();
+				LoaderUI:Destroy();
+				return loadstring(game:HttpGet(`https://raw.githubusercontent.com/{Github.OWNER}/{Github.REPO}/refs/heads/main/{Selected}`))();
 			end)
 		end
 
