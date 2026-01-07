@@ -5,6 +5,7 @@ local Namespaces = {
 
 local Events = {
     ["Players"] = {
+        ["Getter"] = "932438.1553287813",
         ["ShotFired"] = "468681.9235070626",
         ["InflictHit"] = "133758.26977966932",
         ["CycleRound"] = "251884.5282889347",
