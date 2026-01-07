@@ -3,7 +3,7 @@ local Namespaces = {
 };
 
 local Events = {
-    ["Players"] = { ["Getter"] = "932438.1553287813" }
+    ["Players"] = { ["Getter"] = "932438.1553287813", ["InflictHit"] = "650209.529190766" }
 };
 
 return Namespaces, Events;
