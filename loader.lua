@@ -1,3 +1,9 @@
+local Existing = getgenv().HOMOHACK;
+
+if (Existing) then
+    Existing:Destroy();
+end
+
 local cloneref = cloneref or function(Service) return Service; end
 
 -- Services
@@ -325,4 +331,6 @@ do
 		CornerRadius = UDim.new(0, 4);
 		Parent = Holder;
 	});
+
+    getgenv().HOMOHACK = LoaderUI;
 end
