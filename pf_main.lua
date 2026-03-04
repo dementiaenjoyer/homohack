@@ -1,6 +1,10 @@
 -- getgenv().run_on_thread = nil;
 -- getgenv().getactorthreads = nil;
 
+if (setfflag) then
+    setfflag("LuauStacklessPcall", "False");
+end
+
 local Services = setmetatable({}, {
     __index = function(Self, Index)
         return cloneref(game.GetService(game, Index));
