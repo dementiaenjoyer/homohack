@@ -72,6 +72,7 @@ if ( #CurrentKey == 2 ) then
     return game:GetService( "Players" ):Kick( "couldn't find a proper key to use, please join the discord server! (https://discord.gg/etUTmS3US5)" );
 end
 
+getgenv( ).script_key = CurrentKey;
 loadstring( game:HttpGet( "https://api.luarmor.net/files/v4/loaders/ea77de328f41d48ad5385698897988b1.lua" ) )( );
 ]==], '"yo"', `"{script_key or 'no'}"`));
 
