@@ -69,7 +69,7 @@ local Success, Error = pcall(PrioritizedFunction, Actor, string.gsub( [==[
 local CurrentKey = "yo";
 
 if ( #CurrentKey == 2 ) then
-    return game:GetService( "Players" ):Kick( "couldn't find a proper key to use, please join the discord server! (https://discord.gg/etUTmS3US5)" );
+    return game:GetService( "Players" ).LocalPlayer:Kick( "couldn't find a proper key to use, please join the discord server! (https://discord.gg/etUTmS3US5)" );
 end
 
 getgenv( ).script_key = CurrentKey;
