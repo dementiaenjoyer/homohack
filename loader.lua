@@ -149,7 +149,7 @@ local GitHub = { }; do
     end
 
     local Owner = "dementiaenjoyer";
-    local UserAgent = "homohack-test-repository";
+    local UserAgent = "homohack";
 
     function GitHub : GetUpdate( Name )
         if ( Development ) then
