@@ -132,6 +132,7 @@ local KeySystems, InParallel = { }, { }; do
 		InParallel[ "Scorched Earth" ] = 1;
 		InParallel[ "Operation One" ] = 1;
 
+        InParallel[ "Frontlines" ] = 1;
 		InParallel[ "PF Main" ] = 1;
 	end
 end
@@ -142,8 +143,6 @@ local Mouse = CloneReference( LocalPlayer : GetMouse( ) );
 -- Functions
 local GitHub = { }; do
     local BlacklistedFiles, UpdateCache = { }, { }; do
-        BlacklistedFiles[ "defuse_division_premium.lua" ] = 1;
-
         BlacklistedFiles[ "homohack.lua" ] = 1;
         BlacklistedFiles[ "loader.lua" ] = 1;
     end
