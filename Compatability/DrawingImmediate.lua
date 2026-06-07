@@ -1,5 +1,6 @@
 local BetterDrawing = game : HttpGet( "https://raw.githubusercontent.com/dementiaenjoyer/Better-Drawing/refs/heads/main/Main.lua" ); do
     getgenv( ).hookfunction = ( hookfunction or 1 )
+	getgenv( ).cleardrawcache = nil;
     getgenv( ).IGNORE_HOOK = true;
 
     BetterDrawing = loadstring( BetterDrawing )( );
