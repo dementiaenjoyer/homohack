@@ -488,13 +488,14 @@ local Loader = { }; do
 	function Loader : GetActor( )
 		local GetDeletedActors = getdeletedactors;
 		local GetActorThreads = getactorthreads;
+        local GetActors = getactors;
 		
-		if ( not GetActorThreads ) and ( not GetDeletedActors ) then
+		if ( not GetActorThreads ) and ( not GetDeletedActors ) and ( not GetActors ) then
 			return;
 		end
 		
-		local Actors = GetActorThreads and GetActorThreads( ) or GetDeletedActors( );
-		
+		local Actors = ( ( GetActorThreads and GetActorThreads( ) ) or ( GetDeletedActors and GetDeletedActors( ) ) ) or GetActors( );
+
 		if ( not Actors ) then
 			return;
 		end
