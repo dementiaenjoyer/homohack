@@ -21,7 +21,7 @@ local Result = { }; do
 						continue;
 					end
 
-					local DrawingObject = Drawing.new( ClassName );
+					local DrawingObject = BetterDrawing : Create( ClassName );
 					DrawingObject.Visible = true;
 
 					for Property, Value in RenderData do
