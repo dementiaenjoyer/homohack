@@ -21,7 +21,10 @@ local Result = { }; do
 						continue;
 					end
 
+					print( ClassName );
+
 					local DrawingObject = BetterDrawing : Create( ClassName );
+					
 					DrawingObject.Visible = true;
 
 					for Property, Value in RenderData do
@@ -34,11 +37,14 @@ local Result = { }; do
 		end };
 	end
 
-	-- Draw Functions (TODO: Clean this up, all of these functions rnt needed..)
+	-- Draw Functions (TODO: Clean this up, all of these functions rnt needed.. also properly implement filled ones.)
 	do
 		function Result.OutlinedText( Position, Font, FontSize, Color, Opacity, Text, Center )
+			Result.Text( Position, Font, FontSize, Color, Opacity, Text, Center );
+
+			--[[
 			TableInsert( RenderQueue, {
-				[ "Class" ] = "OutlinedText",
+				[ "Class" ] = "Text",
 
 				[ "Transparency" ] = Opacity,
 				[ "FontSize" ] = FontSize,
@@ -51,6 +57,7 @@ local Result = { }; do
 				[ "Color" ] = Color,
 				[ "Text" ] = Text,
 			} );
+			]]
 		end
 
 		function Result.Quad( PointA, PointB, PointC, PointD, Color, Opacity, Thickness )
@@ -72,7 +79,7 @@ local Result = { }; do
 
 		function Result.Rectangle( Position, Size, Color, Opacity, Rounding, Thickness )
 			TableInsert( RenderQueue, {
-				[ "Class" ] = "Rectangle",
+				[ "Class" ] = "Square",
 
 				[ "Transparency" ] = Opacity,
 				[ "Thickness" ] = Thickness,
@@ -134,7 +141,7 @@ local Result = { }; do
 
 		function Result.FilledQuad( PointA, PointB, PointC, PointD, Color, Opacity )
 			TableInsert( RenderQueue, {
-				[ "Class" ] = "FilledQuad",
+				[ "Class" ] = "Quad",
 
 				[ "Transparency" ] = Opacity,
 
@@ -148,44 +155,15 @@ local Result = { }; do
 		end
 
 		function Result.FilledRectangle( TopLeft, Size, Color, Opacity, Rounding )
-			TableInsert( RenderQueue, {
-				[ "Class" ] = "FilledRectangle",
-
-				[ "Transparency" ] = Opacity,
-				[ "Rounding" ] = Rounding,
-
-				[ "Position" ] = TopLeft,
-				[ "Size" ] = Size,
-
-				[ "Color" ] = Color,
-			} );
+			Result.Rectangle( TopLeft, Size, Color, Opacity, Rounding );
 		end
 
 		function Result.FilledCircle( Position, Radius, Color, NumSides, Opacity )
-			TableInsert( RenderQueue, {
-				[ "Class" ] = "FilledCircle",
-				[ "Transparency" ] = Opacity,
-
-				[ "NumSides" ] = NumSides,
-				[ "Position" ] = Position,
-
-				[ "Radius" ] = Radius,
-
-				[ "Color" ] = Color,
-			} );
+			Result.Circle( Position, Radius, Color, Opacity, NumSides );
 		end
 
 		function Result.FilledTriangle( PointA, PointB, PointC, Color, Opacity )
-			TableInsert( RenderQueue, {
-				[ "Class" ] = "FilledTriangle",
-				[ "Transparency" ] = Opacity,
-
-				[ "PointA" ] = PointA,
-				[ "PointB" ] = PointB,
-				[ "PointC" ] = PointC,
-
-				[ "Color" ] = Color,
-			} );
+			Result.Triangle( PointA, PointB, PointC, Color, Opacity );
 		end
 
 		function Result.Line( From, To, Color, Opacity, Thickness )
