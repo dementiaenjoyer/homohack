@@ -19,16 +19,21 @@ local DummyFunction = function( ... )
 	local Callback = select( 1, ... );
 	
 	if ( type( Callback ) == "function" ) then
-		return Callback( );
+		return Callback;
 	end
 	
 	return ...;
 end
 
-local IsParallel = ( ( isparallel or is_parallel ) or DummyFunction );
-local QueueOnTeleport = ( queue_on_teleport or DummyFunction );
-local CloneReference = ( cloneref or DummyFunction );
+local IdentifyExecutor = ( ( identifyexecutor or getexecutorname ) or DummyFunction( function( )
+    return "SOMETHING OTHER THAN POTASSIUM, ENABLE COMPATIBILITY MODEW!!!!!!";
+end ) );
 
+local IsParallel = ( ( isparallel or is_parallel ) or DummyFunction );
+
+local QueueOnTeleport = ( queue_on_teleport or DummyFunction );
+
+local CloneReference = ( cloneref or DummyFunction );
 local SetFastFlag = ( setfflag or DummyFunction );
 
 -- Services
@@ -109,15 +114,19 @@ local UDimNew = UDim.new;
 local TableInsert = table.insert;
 local TableRemove = table.remove;
 
+local TableUnpack = table.unpack;
+local TablePack = table.pack;
+
+local TableFind = table.find;
+
 local MathClamp = math.clamp;
 local MathFloor = math.floor;
 
-local TableFind = table.find;
+local MathHuge = math.huge;
 local OSTime = os.time;
 
-local MathHuge = math.huge;
-
 -- Constants
+local ExecutorName = TablePack( IdentifyExecutor( ) )[ 1 ];
 local WindowSize = Vector2New( 300, 193 );
 
 local White = Color3New( 1, 1, 1 );
@@ -1631,8 +1640,8 @@ do
 	end Window : AddDivider( );
 
 	Window : AddToggle( "Main / CompatibilityMode", {
+        [ "Default" ] = ExecutorName ~= "Potassium",
 		[ "Text" ] = "Compatibility Mode",
-        [ "Default" ] = false,
     } );
 
 	Window : AddToggle( "Main / AutoLoad", {
