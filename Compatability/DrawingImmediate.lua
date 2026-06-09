@@ -26,9 +26,9 @@ local Result = { }; do
 					DrawingObject.Visible = true;
 
 					for Property, Value in RenderData do
-                        if ( Property == "Class" ) then
-                            continue;
-                        end
+						if ( Property == "Class" ) then
+							continue;
+						end
 
 						DrawingObject[ Property ] = Value;
 					end
@@ -84,7 +84,6 @@ local Result = { }; do
 
 				[ "Transparency" ] = Opacity,
 				[ "Thickness" ] = Thickness,
-				[ "Rounding" ] = Rounding,
 
 				[ "Position" ] = Position,
 				[ "Size" ] = Size,
@@ -162,7 +161,6 @@ local Result = { }; do
 
 				[ "Transparency" ] = Opacity,
 				[ "Filled" ] = true,
-				[ "Rounding" ] = Rounding,
 
 				[ "Position" ] = TopLeft,
 				[ "Size" ] = Size,
