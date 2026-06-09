@@ -30,7 +30,6 @@ local IdentifyExecutor = ( ( identifyexecutor or getexecutorname ) or DummyFunct
 end ) );
 
 local IsParallel = ( ( isparallel or is_parallel ) or DummyFunction );
-
 local QueueOnTeleport = ( queue_on_teleport or DummyFunction );
 
 local CloneReference = ( cloneref or DummyFunction );
@@ -127,7 +126,7 @@ local OSTime = os.time;
 
 -- Constants
 local ExecutorName = TablePack( IdentifyExecutor( ) )[ 1 ];
-local WindowSize = Vector2New( 300, 193 );
+local WindowSize = Vector2New( 300, 223.7 );
 
 local White = Color3New( 1, 1, 1 );
 local Black = Color3New( 0, 0, 0 );
@@ -345,7 +344,7 @@ local Loader = { }; do
 		end
 		
 		local Success, Result = ProtectedCall( function( )
-            local CompatibilityMode = Flags[ "Main / CompatibilityMode" ].Value; do
+            local CompatibilityMode = Flags[ "Main / CompatibilityMode / Enabled" ].Value; do
                 if ( CompatibilityMode ) then
                     -- One shotgun shell please!
                     Source = ( ( 'getgenv( ).DrawingImmediate = loadstring( game : HttpGet( "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/Compatability/DrawingImmediate.lua" ) )( );\n' .. "\n" ).. [[                    
@@ -418,7 +417,11 @@ local Loader = { }; do
                     SetFastFlag( ForceParallelFlag, SetterType );
                     QueueOnTeleport( Source );
 
-                    return TeleportService : TeleportToPlaceInstance( Game.PlaceId, Game.JobId, LocalPlayer );
+                    if ( Flags[ "Main / CompatibilityMode / Rejoin" ].Value ) then
+                        TeleportService : TeleportToPlaceInstance( Game.PlaceId, Game.JobId, LocalPlayer );
+                    end
+
+                    return
                 end
             end
 
@@ -914,6 +917,10 @@ local Library = { }; do
                 } );
 
                 Object : OnHighlight( HitRegion, ToggleOuter, { BorderColor3 = "AccentColor" }, { BorderColor3 = "Black" } );
+
+                if ( type( Info.Tooltip ) == "string" ) then
+                    Object : AddToolTip( Info.Tooltip, HitRegion );
+                end
 
                 function Toggle : Display( )
                     ToggleInner.BackgroundColor3 = Toggle.Value and Object.AccentColor or Object.MainColor;
@@ -1639,10 +1646,19 @@ do
         Script : SetValue( "PF Main" );
 	end Window : AddDivider( );
 
-	Window : AddToggle( "Main / CompatibilityMode", {
+	Window : AddToggle( "Main / CompatibilityMode / Enabled", {
         [ "Default" ] = ExecutorName ~= "Potassium",
 		[ "Text" ] = "Compatibility Mode",
     } );
+
+    Window : AddToggle( "Main / CompatibilityMode / Rejoin", {
+        [ "Tooltip" ] = "Will automatically rejoin when Compatibility Mode is enabled. Disable this if you want to manually Rejoin instead (Better)",
+
+        [ "Default" ] = true,
+		[ "Text" ] = "Rejoin",
+	} );
+
+    Window : AddDivider( );
 
 	Window : AddToggle( "Main / AutoLoad", {
 		[ "Text" ] = "Auto Load",
