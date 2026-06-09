@@ -1,6 +1,6 @@
 --[[
     some things to know:
-        this was rushed together and the entire goal is to expand executor support; compatability is prioritized over everything else
+        this was rushed together and the entire goal is to expand executor support; Compatibility is prioritized over everything else
         changes will be made as time goes on, and this will eventually be cleaned up.
         the code isn't the best, and it's not supposed to be
 
@@ -336,10 +336,10 @@ local Loader = { }; do
 		end
 		
 		local Success, Result = ProtectedCall( function( )
-            local CompatabilityMode = Flags[ "Main / CompatabilityMode" ].Value; do
-                if ( CompatabilityMode ) then -- DrawingImmediate wrapper
+            local CompatibilityMode = Flags[ "Main / CompatibilityMode" ].Value; do
+                if ( CompatibilityMode ) then
                     -- One shotgun shell please!
-                    Source = ( ( 'getgenv( ).DrawingImmediate = loadstring( game : HttpGet( "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/Compatability/DrawingImmediate.lua" ) )( );\n' .. "\n" ).. [[
+                    Source = ( ( 'getgenv( ).DrawingImmediate = loadstring( game : HttpGet( "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/Compatability/DrawingImmediate.lua" ) )( );\n' .. "\n" ).. [[                    
                     local CoreGui = game : GetService( "CoreGui" );
 
                     local Folder = CoreGui : WaitForChild( "TopBarApp", 9e9 );
@@ -359,7 +359,7 @@ local Loader = { }; do
                         end
 
                         task.wait( .5 );
-                    end
+                    end task.wait( 5 ); -- W HOTFIX (For games like Scorched Earth ...)
 
                     ]] .. Source );
 
@@ -375,38 +375,42 @@ local Loader = { }; do
             if ( IsFile( Key ) ) then
                 Source = `getgenv( ).script_key = "{ ReadFile( Key ) or "" }"\n` .. Source;
             end
-			
-			if ( Actor ) and ( not IsParallel( ) ) and ( not CompatabilityMode ) then
-				local LoadFunction = run_on_thread; do
+
+            if ( not IsParallel( ) ) and ( Parallel ) then
+                if ( Actor ) and ( not CompatibilityMode ) then
                     local Type = type( Actor );
 
-                    if ( Type == "Instance" ) or ( Type == "userdata" ) or ( not LoadFunction ) then
-                        LoadFunction = run_on_actor;
+                    if ( Type == "Instance" ) or ( Type == "userdata" ) or ( Type == "thread" ) then
+                        local LoadFunction = run_on_thread; do
+                            if ( not LoadFunction ) then
+                                LoadFunction = run_on_actor;
+                            end
+                        end
+
+                        local Executed, Output = ProtectedCall( function( )
+                            return ( LoadFunction or DummyFunction )( Actor, Source );
+                        end )
+                        
+                        if ( not Executed ) then
+                            return LocalPlayer : Kick( `Failed to run script in parallel, your executor is likely not supported: { Output }` );
+                        end
                     end
+
+                    return;
                 end
 
-				local Executed, Output = ProtectedCall( function( )
-					return ( LoadFunction or DummyFunction )( Actor, Source );
-				end )
-				
-				if ( not Executed ) then
-					return LocalPlayer : Kick( `Failed to run script in parallel, your executor is likely not supported: { Output }` );
-				end
+                if ( CompatibilityMode ) then
+                    local SetterType = self : GetFlagSetType( true );
 
-                return;
-			end
+                    if ( not SetterType ) then
+                        return LocalPlayer : Kick( "Last Compatibility resort failed, your executor cannot run scripts in parallel." );
+                    end
 
-            if ( CompatabilityMode and Parallel ) then
-                local SetterType = self : GetFlagSetType( true );
+                    SetFastFlag( ForceParallelFlag, SetterType );
+                    QueueOnTeleport( Source );
 
-				if ( not SetterType ) then
-					return LocalPlayer : Kick( "Last compatability resort failed, your executor cannot run scripts in parallel." );
-				end
-
-				SetFastFlag( ForceParallelFlag, SetterType );
-                QueueOnTeleport( Source );
-
-                return TeleportService : TeleportToPlaceInstance( Game.PlaceId, Game.JobId, LocalPlayer );
+                    return TeleportService : TeleportToPlaceInstance( Game.PlaceId, Game.JobId, LocalPlayer );
+                end
             end
 
             LoadString( Source )( );
@@ -1626,8 +1630,8 @@ do
         Script : SetValue( "PF Main" );
 	end Window : AddDivider( );
 
-	Window : AddToggle( "Main / CompatabilityMode", {
-		[ "Text" ] = "Compatability Mode",
+	Window : AddToggle( "Main / CompatibilityMode", {
+		[ "Text" ] = "Compatibility Mode",
         [ "Default" ] = false,
     } );
 
