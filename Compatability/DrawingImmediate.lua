@@ -26,6 +26,10 @@ local Result = { }; do
 					DrawingObject.Visible = true;
 
 					for Property, Value in RenderData do
+                        if ( Property == "Class" ) then
+                            continue;
+                        end
+
 						DrawingObject[ Property ] = Value;
 					end
 				end TableClear( RenderQueue );
