@@ -435,28 +435,17 @@ local Loader = { }; do
 
 	function Loader : GetFlagSetType( Value )
 		local FastFlag, Counter = "BaseWrapVerticesModified", 0; -- [[ BOOLEAN ]]
+        local ValueString = ToString( Value );
 
-		local function GetDataType( Param )
-			if ( ProtectedCall( function( )	SetFastFlag( FastFlag, Param ) end ) ) then
-				return Param;
-			end
-			
-			local Result = nil; do
-				Counter += 1;
-				
-                if ( Counter >= 3 ) then
-					Result = GetDataType( Value );
-				end
-
-				if ( Counter < 3 ) then
-					Result = GetDataType( StringGSub( Param, "^%l", StringUpper ) );
-				end
-			end
-			
-			return Result;
-		end
-		
-		return GetDataType( ToString( Value ) );
+        for Index, Formatted in { Value, ValueString, StringGSub( ValueString, "^%l", StringUpper ) } do
+            local Success = ProtectedCall( function( )
+                return SetFastFlag( FastFlag, Formatted );
+            end )
+            
+            if ( Success ) then
+                return Formatted;
+            end
+        end
 	end
 
     function Loader : FormatString( Value )
