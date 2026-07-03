@@ -88,7 +88,7 @@ local OSTime = os.time;
 
 -- Constants
 local ExecutorName = TablePack( IdentifyExecutor( ) )[ 1 ];
-local WindowSize = Vector2New( 300, 223.7 );
+local WindowSize = Vector2New( 300, 253 );
 
 local White = Color3New( 1, 1, 1 );
 local Black = Color3New( 0, 0, 0 );
@@ -108,7 +108,6 @@ local KeySystems, InParallel = { }, { }; do
 end
 
 local LocalPlayer = Players.LocalPlayer;
-local Mouse = CloneReference( LocalPlayer : GetMouse( ) );
 
 -- Functions
 local GitHub = { }; do
@@ -309,7 +308,7 @@ local Loader = { }; do
             local CompatibilityMode = Flags[ "Main / CompatibilityMode / Enabled" ].Value; do
                 if ( CompatibilityMode ) then
                     -- One shotgun shell please!
-                    Source = ( ( 'getgenv( ).DrawingImmediate = loadstring( game : HttpGet( "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/Compatability/DrawingImmediate.lua" ) )( );\n' .. "\n" ).. [[                    
+                    Source = [[
                     local CoreGui = game : GetService( "CoreGui" );
 
                     local Folder = CoreGui : WaitForChild( "TopBarApp", 9e9 );
@@ -331,7 +330,7 @@ local Loader = { }; do
                         task.wait( .5 );
                     end task.wait( 5 ); -- W HOTFIX (For games like Scorched Earth ...)
 
-                    ]] .. Source );
+                    ]] .. Source;
 
                     if ( DebugMode ) then
                         writefile( "HHACK.txt", Source );
@@ -583,6 +582,15 @@ do
         Script : SetValue( "PF Main" );
 	end Window : AddDivider( );
 
+    Window : AddToggle( "Main / LoadCustomDrawingImmediate", {
+        [ "Tooltip" ] = "Loads the custom DrawingImmediate wrapper. May fix crashes",
+        [ "Default" ] = ExecutorName ~= "Potassium",
+
+		[ "Text" ] = "Custom DI",
+    } );
+
+    Window : AddDivider( );
+
 	Window : AddToggle( "Main / CompatibilityMode / Enabled", {
         [ "Default" ] = ExecutorName ~= "Potassium",
 		[ "Text" ] = "Compatibility Mode",
@@ -636,6 +644,11 @@ do
                 end
 
                 LibraryObject : Unload( );
+
+                if ( Flags[ "Main / LoadCustomDrawingImmediate" ].Value ) then
+                    Content = 'getgenv( ).DrawingImmediate = loadstring( game : HttpGet( "https://raw.githubusercontent.com/dementiaenjoyer/homohack/refs/heads/main/Compatability/DrawingImmediate.lua" ) )( );\n' .. Content;
+                end
+
                 Loader : Execute( Content, InParallel[ Name ] );
             end,
 
