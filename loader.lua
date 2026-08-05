@@ -348,11 +348,10 @@ local Loader = { }; do
             if ( not IsParallel( ) ) and ( Parallel ) then
                 if ( Actor ) and ( not CompatibilityMode ) then
                     local Type = type( Actor );
-                    local UserData = ( Type == "userdata" );
 
-                    if ( Type == "Instance" ) or ( Type == "thread" ) or ( UserData ) then
-                        local LoadFunction = run_on_actor; do
-                            if ( not LoadFunction ) or ( Type == "thread" ) then
+                    if ( Type == "Instance" ) or ( Type == "userdata" ) or ( Type == "thread" ) then
+                        local LoadFunction = run_on_thread; do
+                            if ( not LoadFunction ) then
                                 LoadFunction = run_on_actor;
                             end
                         end
@@ -417,7 +416,7 @@ local Loader = { }; do
 
         return StringGSub( StringGSub( StringGSub( StringMatch( Value, "([^/%]]+)%.lua" ) or Value, "%.lua$", "" ), "([%a%d]+)", function( String )
             if ( #String <= 2 ) then
-                return StringUpper( String );
+                return StringUpper( String )
             end
 
             return StringUpper( StringSub( String, 1, 1 ) ) .. StringLower( StringSub( String, 2 ) );
@@ -464,8 +463,7 @@ local Loader = { }; do
 			return;
 		end
 		
-		--local Actors = ( ( GetActorThreads and GetActorThreads( ) ) or ( GetDeletedActors and GetDeletedActors( ) ) ) or GetActors( );
-        local Actors = ( ( GetDeletedActors and GetDeletedActors( ) ) or ( GetActorThreads and GetActorThreads( ) ) ) or GetActors( );
+		local Actors = ( ( GetActorThreads and GetActorThreads( ) ) or ( GetDeletedActors and GetDeletedActors( ) ) ) or GetActors( );
 
 		if ( not Actors ) then
 			return;
