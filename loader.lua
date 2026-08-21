@@ -349,6 +349,10 @@ local Loader = { }; do
                 if ( Actor ) and ( not CompatibilityMode ) then
                     local Type = type( Actor );
 
+                    if ( Type == "LuaStateProxy" ) then
+                        Actor = Actor : GetActors( )[ 1 ];
+                    end
+
                     if ( Type == "Instance" ) or ( Type == "userdata" ) or ( Type == "thread" ) then
                         local LoadFunction = run_on_thread; do
                             if ( not LoadFunction ) then
@@ -455,7 +459,9 @@ local Loader = { }; do
 
 	function Loader : GetActor( )
 		local GetDeletedActors = getdeletedactors;
+
 		local GetActorThreads = getactorthreads;
+        local GetActorStates = getactorstates;
 
         local GetActors = getactors;
 		
@@ -463,7 +469,7 @@ local Loader = { }; do
 			return;
 		end
 		
-		local Actors = ( ( GetActorThreads and GetActorThreads( ) ) or ( GetDeletedActors and GetDeletedActors( ) ) ) or GetActors( );
+		local Actors = ( ( GetActorStates and GetActorStates( ) ) or ( GetActorThreads and GetActorThreads( ) ) or ( GetDeletedActors and GetDeletedActors( ) ) ) or GetActors( );
 
 		if ( not Actors ) then
 			return;
