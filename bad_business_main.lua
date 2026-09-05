@@ -29,7 +29,7 @@ local EnumEasingStyle = Enum.EasingStyle;
 
 local GetNamecallMethod = getnamecallmethod;
 local DrawingImmediate = DrawingImmediate;
-local DrawingImmediateCircle = DrawingImmediate.Circle;
+    local DrawingImmediateCircle = DrawingImmediate.Circle;
 
 local GetThreadIdentity = getthreadidentity;
 local SetThreadIdentity = setthreadidentity;
@@ -1308,7 +1308,7 @@ do
             WSGroup : AddDivider( );
 
             WSGroup : AddSlider( "Misc / WalkSpeed / Value", {
-                Text = "Value",
+                Text = "Speed",
                 Default = 1,
 
                 Max = 10,
