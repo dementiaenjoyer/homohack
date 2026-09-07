@@ -45,14 +45,12 @@ local HookMetaMethod = hookmetamethod;
 local Vector3YAxis = Vector3.yAxis;
 local CFrameAngles = CFrame.Angles;
 
-local GarbageCollection = getgc( );
 local SetMetatable = setmetatable;
 
 local HookFunction = hookfunction;
 local InstanceNew = Instance.new;
 
 local CheckCaller = checkcaller;
-local IsLuaClosure = islclosure;
 local GetUpValues = getupvalues;
 
 local Vector3Zero = Vector3.zero;
@@ -705,7 +703,7 @@ local Ragebot = { }; do
             NetworkFire( m_Network, "Item_Paintball", "Shoot", Model, Origin, Pellets );
             NetworkFire( m_Network, "Item_Paintball", "Reload", Model );
         end if ( Effects ) then
-            Weapon : Effects( true );
+            Weapon : Effects( );
         end
 
         for Index, Pellet in Pellets do
