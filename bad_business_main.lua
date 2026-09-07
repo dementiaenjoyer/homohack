@@ -45,12 +45,14 @@ local HookMetaMethod = hookmetamethod;
 local Vector3YAxis = Vector3.yAxis;
 local CFrameAngles = CFrame.Angles;
 
+local GarbageCollection = getgc( );
 local SetMetatable = setmetatable;
 
 local HookFunction = hookfunction;
 local InstanceNew = Instance.new;
 
 local CheckCaller = checkcaller;
+local IsLuaClosure = islclosure;
 local GetUpValues = getupvalues;
 
 local Vector3Zero = Vector3.zero;
@@ -681,18 +683,20 @@ local Ragebot = { }; do
         local GunConfig = Configs.Gun;
 
         local Direction = ( Destination - Origin );
-        -- Direction += Vector3New( 0, Projectile.GravityCorrection * .001, 0 );
+        local Projectile = GunConfig.Projectile;
+
+        Direction += Vector3New( 0, Projectile.GravityCorrection * .001, 0 );
 
         local Distance = Direction.Magnitude;
         local Pellets = { }; do
-            for Index = 1, GunConfig.Projectile.Amount do
+            for Index = 1, Projectile.Amount do
                 local PelletID = Weapon : GenerateID( );
 
                 TableInsert( Pellets, {
                     Direction.Unit * Distance,
                     PelletID,
 
-                    Projectiles : TimeToHit( Distance, BulletConfig.Speed ),
+                    Projectiles : TimeToHit( Distance, BulletConfig.Speed ) * 1.3,
                 } );
             end
         end
@@ -751,17 +755,6 @@ local Ragebot = { }; do
                     end
                 end
 
-                --[[
-                local Direction = ( Destination - NewOrigin );
-
-                local HitCast = Workspace : Raycast( NewOrigin, Direction.Unit * MaxCastRange, Params );
-                local HitInstance = ( HitCast and HitCast.Instance );
-
-                if ( not HitInstance ) or ( not HitInstance : IsDescendantOf( ( Strict and Character ) or Characters ) ) then -- Pass strict for guaranteed hits, but it is not needed.
-                    continue;
-                end
-                ]]
-
                 local Distance = Direction.Magnitude;
 
                 if ( Distance <= ClosestDistance ) then
@@ -816,7 +809,6 @@ local Ragebot = { }; do
         local StrictScan = Flags[ "Combat / Ragebot / StrictScan" ];
         local Effects = Flags[ "Combat / Ragebot / Effects" ];
 
-        -- Destination, HitPart, Origin, Effects, Configs
         local HitPart, Origin = self : GetTarget( t_IgnoreList, Client : GetOrigin( ), {
             [ "b_OriginScanRange" ] = OriginScanRange,
             [ "b_OriginScan" ] = OriginScanEnabled,
@@ -836,10 +828,12 @@ local Ragebot = { }; do
             return;
         end
 
-        self : Shoot( Destination, HitPart, Origin, Effects, {
-            [ "Bullet" ] = BulletConfig,
-            [ "Gun" ] = Config,
-        } );
+        for Index = 0, Flags[ "Combat / Ragebot / Shots" ].Value do
+            self : Shoot( Destination, HitPart, Origin, Effects, {
+                [ "Bullet" ] = BulletConfig,
+                [ "Gun" ] = Config,
+            } );
+        end
     end
 end
 
@@ -1154,6 +1148,8 @@ do
                 Default = true,
             } );
 
+            RagebotGroup : AddDivider( );
+
             RagebotGroup : AddSlider( "Combat / Ragebot / FRM", {
                 Text = "FireRate Multiplier",
                 Default = 1,
@@ -1163,6 +1159,17 @@ do
 
                 Compact = false,
                 Rounding = 2,
+            } );
+
+            RagebotGroup : AddSlider( "Combat / Ragebot / Shots", {
+                Text = "Shots",
+                Default = 1,
+
+                Max = 10,
+                Min = 1,
+
+                Compact = false,
+                Rounding = 0,
             } );
         end
     end
@@ -1298,7 +1305,7 @@ do
                 } );
             end
         end
-
+        
         local WSGroup = MiscTab : AddRightGroupbox( "Walk Speed" ); do
             WSGroup : AddToggle( "Misc / WalkSpeed / Enabled", {
                 Text = "Enabled",
@@ -1363,6 +1370,17 @@ do
 
                     Multi = false,
                     Default = 1,
+                } );
+
+                Group : AddSlider( `Misc / { Value } / Volume`, {
+                    Text = "Value",
+                    Default = 1,
+
+                    Max = 10,
+                    Min = 1,
+
+                    Compact = false,
+                    Rounding = 1,
                 } );
             end
         end
@@ -1599,7 +1617,7 @@ do
             local Enabled = Flags[ `Misc / { Value } / Enabled` ];
 
             if ( Enabled ) then
-                World : PlaySound( t_OnInteraction[ Flags[ `Misc / { Value } / Sound` ] ], 10, 1 );
+                World : PlaySound( t_OnInteraction[ Flags[ `Misc / { Value } / Sound` ] ], Flags[ `Misc / { Value } / Volume` ].Value, 1 );
             end
         end )
     end
