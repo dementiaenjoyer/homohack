@@ -5521,7 +5521,7 @@ do
 					const Files, Result = ConfigsAssets : listFiles( ), { };
 
 					for _, File in Files do
-						const ConfigName = string.match( File, "([/\\]+)$" );
+						const ConfigName = string.match( File, "([^/\\]+)$" );
 
 						if ( not ConfigsAssets : isFile( ConfigName ) ) then
 							continue;
