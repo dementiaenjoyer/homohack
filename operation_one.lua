@@ -4611,7 +4611,7 @@ const Visuals = { }; do
 			const NumSides, Circle = 67, DrawingImmediate.Circle;
 
 			for Index, Value in { "SilentAim", "Aimbot" } do
-				const BaseFlag = "Combat / { Value }";
+				const BaseFlag = `Combat / { Value }`;
 
 				if ( Flags[ `{ BaseFlag } / Range / Enabled` ] ) then
 					const Color = Flags[ `{ BaseFlag } / Range / Color` ];
