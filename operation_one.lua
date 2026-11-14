@@ -12,11 +12,12 @@ const CloneReference = cloneref;
 const ProtectedCall = pcall;
 
 const DeleteFolder = delfolder;
-const IsFolder = isfolder;
-const IsFile = isfile;
-
 const WriteFile = writefile;
+
+const IsFolder = isfolder;
 const ReadFile = readfile;
+
+const IsFile = isfile;
 
 if ( not CloneReference ) or ( not IsFolder ) or ( not WriteFile ) or ( not ReadFile ) then
 	return;
@@ -463,80 +464,78 @@ local GameTick = 0;
 const PlayerObject = { DataEntry = nil }; do
 	PlayerObject.__index = PlayerObject;
 
-	LPH_NO_VIRTUALIZE( function( )
-		function PlayerObject : Initiate( Object )
-			const ClassObject = SetMetatable( { }, self );
-			ClassObject.DataEntry = Object;
+	function PlayerObject : Initiate( Object )
+		const ClassObject = SetMetatable( { }, self );
+		ClassObject.DataEntry = Object;
 
-			return ClassObject;
+		return ClassObject;
+	end
+
+	function PlayerObject : Collision( )
+		return self : Get( ).instance;
+	end
+
+	function PlayerObject : Character( )
+		return self.DataEntry.Model;
+	end
+
+	function PlayerObject : RootPart( )
+		const Character = self : Character( );
+
+		if ( not Character ) then
+			return;
 		end
 
-		function PlayerObject : Collision( )
-			return self : Get( ).instance;
+		return Character.FindFirstChild( Character, "torso" ), Character;
+	end
+
+	function PlayerObject : Country( )
+		const Player = self : Player( );
+
+		if ( not Player ) then
+			return;
 		end
 
-		function PlayerObject : Character( )
-			return self.DataEntry.Model;
+		const Code = Player : GetAttribute( "CountryCode" );
+
+		if ( not Code ) then
+			return;
 		end
 
-		function PlayerObject : RootPart( )
-			const Character = self : Character( );
+		return Countries[ Code ];
+	end
 
-			if ( not Character ) then
-				return;
-			end
+	function PlayerObject : Hostile( )
+		return self : Player( ).Team ~= LocalPlayer.Team;
+	end
 
-			return Character.FindFirstChild( Character, "torso" ), Character;
+	function PlayerObject : Player( )
+		return Players.FindFirstChild( Players, self : Name( ) ) or DummyPlayer;
+	end
+
+	function PlayerObject : Health( )
+		const Collision = self : Collision( );
+
+		if ( not Collision ) then
+			return 0;
 		end
 
-		function PlayerObject : Country( )
-			const Player = self : Player( );
+		const Humanoid = Collision.FindFirstChildOfClass( Collision, "Humanoid" );
 
-			if ( not Player ) then
-				return;
-			end
-
-			const Code = Player : GetAttribute( "CountryCode" );
-
-			if ( not Code ) then
-				return;
-			end
-
-			return Countries[ Code ];
+		if ( not Humanoid ) then
+			return 0;
 		end
 
-		function PlayerObject : Hostile( )
-			return self : Player( ).Team ~= LocalPlayer.Team;
-		end
+		return Humanoid.Health, Humanoid.MaxHealth;
+	end
 
-		function PlayerObject : Player( )
-			return Players.FindFirstChild( Players, self : Name( ) ) or DummyPlayer;
-		end
+	function PlayerObject : Name( )
+		return self.DataEntry.Name;
+	end
 
-		function PlayerObject : Health( )
-			const Collision = self : Collision( );
-
-			if ( not Collision ) then
-				return 0;
-			end
-
-			const Humanoid = Collision.FindFirstChildOfClass( Collision, "Humanoid" );
-
-			if ( not Humanoid ) then
-				return 0;
-			end
-
-			return Humanoid.Health, Humanoid.MaxHealth;
-		end
-
-		function PlayerObject : Name( )
-			return self.DataEntry.Name;
-		end
-
-		function PlayerObject : Get( )
-			return self.DataEntry.StateObject;
-		end
-	end )( );
+	function PlayerObject : Get( )
+		return self.DataEntry.StateObject;
+	end
 end
 
 -- Utilities
@@ -546,274 +545,264 @@ const Replicators = { DataEntries = { }, HostileOnly = { }, Everyone = { } }; do
 
 	local CacheStamp = 0;
 
-	LPH_NO_VIRTUALIZE( function( )
-		function Replicators : GetPlayers( DoDead, DoAll )
-			if ( GameTick - CacheStamp ) >= 3 then
-				CacheStamp = GameTick;
+	function Replicators : GetPlayers( DoDead, DoAll )
+		if ( GameTick - CacheStamp ) >= 3 then
+			CacheStamp = GameTick;
 
-				TableClear( EveryoneCache );
-				TableClear( HostileCache );
+			TableClear( EveryoneCache );
+			TableClear( HostileCache );
 
-				for _, DataEntry in self.DataEntries do
-					const Object = PlayerObject : Initiate( DataEntry );
-					EveryoneCache[ DataEntry ] = Object;
+			for _, DataEntry in self.DataEntries do
+				const Object = PlayerObject : Initiate( DataEntry );
+				EveryoneCache[ DataEntry ] = Object;
 
-					if ( Object : Hostile( ) ) then
-						HostileCache[ DataEntry ] = Object;
-					end
-				end
-
-				self.HostileOnly = HostileCache;
-				self.Everyone = EveryoneCache;
-			end
-
-			return ( DoAll and self.Everyone ) or self.HostileOnly;
-		end
-
-		function Replicators : GetClosest( Range, Part )
-			local Closest, ClosestDistance = nil, Range;
-
-			for _, Object in self : GetPlayers( ) do
-				const Character = Object : Character( );
-
-				if ( not Character ) then
-					continue;
-				end
-
-				const RootPart = Character : FindFirstChild( Part or "head" );
-
-				if ( not RootPart ) then
-					continue;
-				end
-
-				const ScreenPosition, OnScreen = CurrentCamera : WorldToViewportPoint( RootPart.Position );
-
-				if ( not OnScreen ) then
-					continue;
-				end
-
-				const Distance = ( Center - Vector2New( ScreenPosition.X, ScreenPosition.Y ) ).Magnitude;
-
-				if ( Distance <= ClosestDistance ) then
-					Closest, ClosestDistance = RootPart, Distance;
+				if ( Object : Hostile( ) ) then
+					HostileCache[ DataEntry ] = Object;
 				end
 			end
 
-			return Closest;
+			self.HostileOnly = HostileCache;
+			self.Everyone = EveryoneCache;
 		end
-	end )( );
+
+		return ( DoAll and self.Everyone ) or self.HostileOnly;
+	end
+
+	function Replicators : GetClosest( Range, Part )
+		local Closest, ClosestDistance = nil, Range;
+
+		for _, Object in self : GetPlayers( ) do
+			const Character = Object : Character( );
+
+			if ( not Character ) then
+				continue;
+			end
+
+			const RootPart = Character : FindFirstChild( Part or "head" );
+
+			if ( not RootPart ) then
+				continue;
+			end
+
+			const ScreenPosition, OnScreen = CurrentCamera : WorldToViewportPoint( RootPart.Position );
+
+			if ( not OnScreen ) then
+				continue;
+			end
+
+			const Distance = ( Center - Vector2New( ScreenPosition.X, ScreenPosition.Y ) ).Magnitude;
+
+			if ( Distance <= ClosestDistance ) then
+				Closest, ClosestDistance = RootPart, Distance;
+			end
+		end
+
+		return Closest;
+	end
 end
 
 const Controller = { WeaponObject = nil }; do
-	LPH_NO_VIRTUALIZE( function( )
-		function Controller : Character( )
-			const LocalController, CollisionInstance = self : Get( );
+	function Controller : Character( )
+		const LocalController, CollisionInstance = self : Get( );
 
-			if ( not LocalController ) or ( not CollisionInstance ) then
-				return;
-			end
-
-			return LocalController.values.viewmodels, CollisionInstance;
+		if ( not LocalController ) or ( not CollisionInstance ) then
+			return;
 		end
 
-		function Controller : RootPart( )
-			const Character = self : Character( );
-			
-			if ( not Character ) then
-				return;
-			end
+		return LocalController.values.viewmodels, CollisionInstance;
+	end
 
-			return Character : FindFirstChild( "torso" );
+	function Controller : RootPart( )
+		const Character = self : Character( );
+		
+		if ( not Character ) then
+			return;
 		end
 
-		function Controller : Humanoid( )
-			const _, Collision = self : Character( );
-			
-			if ( not Collision ) then
-				return;
-			end
+		return Character : FindFirstChild( "torso" );
+	end
 
-			return Collision : FindFirstChildOfClass( "Humanoid" );
+	function Controller : Humanoid( )
+		const _, Collision = self : Character( );
+		
+		if ( not Collision ) then
+			return;
 		end
 
-		function Controller : Get( )
-			const DataEntry = Replicators.DataEntries[ LocalName ];
+		return Collision : FindFirstChildOfClass( "Humanoid" );
+	end
 
-			if ( not DataEntry ) then
-				return;
-			end
+	function Controller : Get( )
+		const DataEntry = Replicators.DataEntries[ LocalName ];
 
-			const StateObject = DataEntry.StateObject;
-
-			if ( not StateObject ) then
-				return;
-			end
-
-			return StateObject, StateObject.instance;
+		if ( not DataEntry ) then
+			return;
 		end
-	end )( );
+
+		const StateObject = DataEntry.StateObject;
+
+		if ( not StateObject ) then
+			return;
+		end
+
+		return StateObject, StateObject.instance;
+	end
 end
 
 const WorldRenderer = { Elements = { } }; do
-	LPH_NO_VIRTUALIZE( function( )
-		const ScreenGui = InstanceNew( "ScreenGui", CoreGui );
-		const PropertyMap = {   
-			[ "Frame" ] = "BackgroundTransparency",
-			[ "ImageLabel" ] = "ImageTransparency",
-		};
+	const ScreenGui = InstanceNew( "ScreenGui", CoreGui );
+	const PropertyMap = {   
+		[ "Frame" ] = "BackgroundTransparency",
+		[ "ImageLabel" ] = "ImageTransparency",
+	};
 
-		function WorldRenderer : Connect( Position, Lifetime, Element, RotationData )
-			if ( not Element.Parent ) then
-				Element.Parent = ScreenGui;
-			end
-
-			const RotationEnabled = RotationData[ "Rotation / Enabled" ];
-			const RotationSpeed = RotationData[ "Rotation / Speed" ];
-
-			TableInsert( self.Elements, {
-				[ "RotationEnabled" ] = RotationEnabled,
-				[ "RotationSpeed" ] = RotationSpeed,
-
-				[ "Position" ] = Position,
-				[ "Lifetime" ] = Lifetime,
-
-				[ "Element" ] = Element,
-				[ "Added" ] = GameTick,
-			} );
+	function WorldRenderer : Connect( Position, Lifetime, Element, RotationData )
+		if ( not Element.Parent ) then
+			Element.Parent = ScreenGui;
 		end
 
-		function WorldRenderer : Stepper( )
-			const ThreadIdentity = GetThreadIdentity( );
-			const Elements = self.Elements;
+		const RotationEnabled = RotationData[ "Rotation / Enabled" ];
+		const RotationSpeed = RotationData[ "Rotation / Speed" ];
 
-			SetThreadIdentity( 8 );
-				for Index, Value in Elements do
-					if ( Value.Dead ) then
-						TableRemove( Elements, Index ); continue;
-					end
+		TableInsert( self.Elements, {
+			[ "RotationEnabled" ] = RotationEnabled,
+			[ "RotationSpeed" ] = RotationSpeed,
 
-					const RotationEnabled = Value.RotationEnabled;
-					const RotationSpeed = Value.RotationSpeed;
+			[ "Position" ] = Position,
+			[ "Lifetime" ] = Lifetime,
 
-					const Lifetime = Value.Lifetime;
-					const Element = Value.Element;
+			[ "Element" ] = Element,
+			[ "Added" ] = GameTick,
+		} );
+	end
 
-					if ( ( GameTick - Value.Added ) > Lifetime ) and ( not Value.TweenObject ) then
-						const Transparency = PropertyMap[ Element.ClassName ];
+	function WorldRenderer : Stepper( )
+		const ThreadIdentity = GetThreadIdentity( );
+		const Elements = self.Elements;
 
-						if ( Transparency ) then
-							const TweenObject = TweenService : Create( Element, TweenInfoNew( Lifetime * .3 ), { [ Transparency ] = 1 } );
-							Value.TweenObject = TweenObject;
-
-							TweenObject : Play( ); TweenObject.Completed : Once( function( )
-								Value.Dead = true; Element : Destroy( );
-							end )
-						end
-					end
-
-					const ScreenPosition, OnScreen = CurrentCamera : WorldToScreenPoint( Value.Position );
-					Element.Visible = OnScreen;
-
-					const AbsoluteSize = Element.AbsoluteSize;
-					Element.Position = UDim2New( 0, ScreenPosition.X - ( AbsoluteSize.X  * .5 ), 0, ScreenPosition.Y - ( AbsoluteSize.Y * .5 ) );
-					Element.Rotation += RotationSpeed * ( RotationEnabled and 1 or 0 );
+		SetThreadIdentity( 8 );
+			for Index, Value in Elements do
+				if ( Value.Dead ) then
+					TableRemove( Elements, Index ); continue;
 				end
-			SetThreadIdentity( ThreadIdentity );
-		end
-	end )( );
+
+				const RotationEnabled = Value.RotationEnabled;
+				const RotationSpeed = Value.RotationSpeed;
+
+				const Lifetime = Value.Lifetime;
+				const Element = Value.Element;
+
+				if ( ( GameTick - Value.Added ) > Lifetime ) and ( not Value.TweenObject ) then
+					const Transparency = PropertyMap[ Element.ClassName ];
+
+					if ( Transparency ) then
+						const TweenObject = TweenService : Create( Element, TweenInfoNew( Lifetime * .3 ), { [ Transparency ] = 1 } );
+						Value.TweenObject = TweenObject;
+
+						TweenObject : Play( ); TweenObject.Completed : Once( function( )
+							Value.Dead = true; Element : Destroy( );
+						end )
+					end
+				end
+
+				const ScreenPosition, OnScreen = CurrentCamera : WorldToScreenPoint( Value.Position );
+				Element.Visible = OnScreen;
+
+				const AbsoluteSize = Element.AbsoluteSize;
+				Element.Position = UDim2New( 0, ScreenPosition.X - ( AbsoluteSize.X  * .5 ), 0, ScreenPosition.Y - ( AbsoluteSize.Y * .5 ) );
+				Element.Rotation += RotationSpeed * ( RotationEnabled and 1 or 0 );
+			end
+		SetThreadIdentity( ThreadIdentity );
+	end
 end
 
 const Storage = { Stored = { } }; do
-	LPH_NO_VIRTUALIZE( function( )
-		function Storage : Add( Index, Value )
-			self.Stored[ Index ] = Value;
-		end
+	function Storage : Add( Index, Value )
+		self.Stored[ Index ] = Value;
+	end
 
-		function Storage : Remove( Index )
-			self.Stored[ Index ] = nil;
-		end
+	function Storage : Remove( Index )
+		self.Stored[ Index ] = nil;
+	end
 
-		function Storage : Get( Index )
-			return self.Stored[ Index ];
-		end
-	end )( );
+	function Storage : Get( Index )
+		return self.Stored[ Index ];
+	end
 end
 
 const Utilities = { }; do
-	LPH_NO_VIRTUALIZE( function( )
-		local IgnoreCache, IgnoreStamp = { }, 0;
+	local IgnoreCache, IgnoreStamp = { }, 0;
 
-		function Utilities : PlaySound( AssetId, Volume, Pitch )
-			const Sound = InstanceNew( "Sound" );
-
-			Sound.SoundId = `rbxassetid://{ AssetId }`;
-			Sound.Parent = SoundService;
-			Sound.PlayOnRemove = true;
-
-			Sound.Volume = Volume;
-			Sound.Pitch = Pitch;
-
-			Sound.Destroy( Sound );
+	function Utilities : CastBulletRay( Origin, Direction, Thread )
+		local Result = ( ( not Thread ) and self : Raycast( Origin, Direction ) ) or nil;
+		
+		if ( Thread ) then
+			TaskSpawn( function( )
+				Result = self : Raycast( Origin, Direction );
+			end )
 		end
 
-		function Utilities : CastBulletRay( Origin, Direction, Thread )
-			local Result = ( ( not Thread ) and self : Raycast( Origin, Direction ) ) or nil;
-			
-			if ( Thread ) then
-				TaskSpawn( function( )
-					Result = self : Raycast( Origin, Direction );
-				end )
-			end
+		return Result;
+	end
 
-			return Result;
-		end
+	function Utilities : PlaySound( AssetId, Volume, Pitch )
+		const Sound = InstanceNew( "Sound" );
 
-		function Utilities : Raycast( Origin, Direction )
-			return ( self : BulletRay( Origin, Direction, self : GetIgnore( ), nil ) or { } )[ 1 ];
-		end
+		Sound.SoundId = `rbxassetid://{ AssetId }`;
+		Sound.Parent = SoundService;
+		Sound.PlayOnRemove = true;
 
-		function Utilities : GetIgnore( )
-			if ( GameTick - IgnoreStamp ) < 2 then
-				return IgnoreCache;
-			end IgnoreStamp = GameTick;
+		Sound.Volume = Volume;
+		Sound.Pitch = Pitch;
 
-			const Character, Collision = Controller : Character( );
-			
-			const IgnoreList = { Character, Collision, CurrentCamera }; do
-				for _, Value in Storage : Get( "Ragebot / PENETRATABLES" ) or { } do
-					if ( Value.Name == "MetalRoll" ) or ( not Value.HasTag( Value, "Breakable" ) ) or ( Value : FindFirstChild( "MetalRoll" ) ) then
-						continue;
-					end
+		Sound.Destroy( Sound );
+	end
 
-					TableInsert( IgnoreList, Value );
-				end
+	function Utilities : Raycast( Origin, Direction )
+		return ( self : BulletRay( Origin, Direction, self : GetIgnore( ), nil ) or { } )[ 1 ];
+	end
 
-				for _, Player in Replicators : GetPlayers( false, true ) do
-					if ( Player : Hostile( ) ) then
-						continue;
-					end
+	function Utilities : GetIgnore( )
+		if ( GameTick - IgnoreStamp ) < 2 then
+			return IgnoreCache;
+		end IgnoreStamp = GameTick;
 
-					TableInsert( IgnoreList, Player : Character( ) );
-					TableInsert( IgnoreList, Player : Collision( ) );
-				end
-
-				IgnoreCache = IgnoreList;
-			end
-
-			return IgnoreList;
-		end
-
-		Utilities.BulletRay = ( function( )
-			for _, Value in GetGC( ) do
-				if ( TypeOf( Value ) ~= "function" ) then
+		const Character, Collision = Controller : Character( );
+		
+		const IgnoreList = { Character, Collision, CurrentCamera }; do
+			for _, Value in Storage : Get( "Ragebot / PENETRATABLES" ) or { } do
+				if ( Value.Name == "MetalRoll" ) or ( not Value.HasTag( Value, "Breakable" ) ) or ( Value : FindFirstChild( "MetalRoll" ) ) then
 					continue;
 				end
 
-				if ( DebugInfo( Value, "n" ) == "ray_damage" ) then
-					return Value;
-				end
+				TableInsert( IgnoreList, Value );
 			end
-		end )( );
+
+			for _, Player in Replicators : GetPlayers( false, true ) do
+				if ( Player : Hostile( ) ) then
+					continue;
+				end
+
+				TableInsert( IgnoreList, Player : Character( ) );
+				TableInsert( IgnoreList, Player : Collision( ) );
+			end
+
+			IgnoreCache = IgnoreList;
+		end
+
+		return IgnoreList;
+	end
+
+	Utilities.BulletRay = ( function( )
+		for _, Value in GetGC( ) do
+			if ( TypeOf( Value ) ~= "function" ) then
+				continue;
+			end
+
+			if ( DebugInfo( Value, "n" ) == "ray_damage" ) then
+				return Value;
+			end
+		end
 	end )( );
 end
 
@@ -821,152 +810,146 @@ const World = { }; do
 	const Info = TweenInfoNew( .35, EnumEasingStyle.Quad, EnumEasingDirection.InOut );
 	const TracerID = "rbxassetid://446111271";
 
-	LPH_NO_VIRTUALIZE( function( )
-		function World : BulletTracer( Origin, Destination, Color1, Color2, Lifetime, Transparency, Width )
-			const Cast = Utilities : CastBulletRay( Origin, ( Destination - Origin ).Unit * 1000, true );
-			Destination = ( Cast and Cast.Position ) or Destination;
+	function World : BulletTracer( Origin, Destination, Color1, Color2, Lifetime, Transparency, Width )
+		const Cast = Utilities : CastBulletRay( Origin, ( Destination - Origin ).Unit * 1000, true );
+		Destination = ( Cast and Cast.Position ) or Destination;
 
-			const OriginAttachment = InstanceNew( "Attachment", Terrain );
-			OriginAttachment.CFrame = CFrameNew( Origin );
+		const OriginAttachment = InstanceNew( "Attachment", Terrain );
+		OriginAttachment.CFrame = CFrameNew( Origin );
 
-			const EndAttachment = InstanceNew( "Attachment", Terrain );
-			EndAttachment.CFrame = CFrameNew( Destination );
+		const EndAttachment = InstanceNew( "Attachment", Terrain );
+		EndAttachment.CFrame = CFrameNew( Destination );
 
-			const Beam = InstanceNew( "Beam", Terrain ); do
-				Beam.Transparency = NumberSequenceNew( Transparency );
-				Beam.Texture = TracerID;
+		const Beam = InstanceNew( "Beam", Terrain ); do
+			Beam.Transparency = NumberSequenceNew( Transparency );
+			Beam.Texture = TracerID;
 
-				Beam.Attachment0 = OriginAttachment;
-				Beam.Attachment1 = EndAttachment;
+			Beam.Attachment0 = OriginAttachment;
+			Beam.Attachment1 = EndAttachment;
 
-				Beam.Color = ColorSequenceNew( {
-					ColorSequenceKeypointNew( 0, Color1 ),
-					ColorSequenceKeypointNew( 1, Color2 )
-				} );
-
-				Beam.LightInfluence = 0;
-				Beam.LightEmission = 1;
-
-				Beam.Width0 = Width;
-				Beam.Width1 = Width;
-
-				Beam.FaceCamera = true;
-				Beam.Enabled = true;
-			end
-		
-			TaskDelay( Lifetime, function( )
-				TweenService.Create( TweenService, Beam, Info, {
-					Width0 = 0,
-					Width1 = 0
-				} ) : Play( ); TaskWait( Info.Time );
-
-				OriginAttachment.Destroy( OriginAttachment );
-				EndAttachment.Destroy( EndAttachment );
-			end )
-		end
-
-		function World : HitMarker( Transparency, Position, Lifetime, Size, Color1, Color2, RotationData )
-			const Marker = InstanceNew( "ImageLabel" ); do
-				Marker.Image = HitMarkerAsset;
-				--Marker.ImageColor3 = Color;
-
-				Marker.Size = UDim2New( 0, Size, 0, Size );
-
-				Marker.ImageTransparency = Transparency;
-				Marker.BackgroundTransparency = 1;
-				
-				Marker.Visible = true;
-			end
-
-			const UIGradient = InstanceNew( "UIGradient", Marker ); do
-				UIGradient.Color = ColorSequenceNew( {
-					ColorSequenceKeypointNew( 0, Color1 ),
-					ColorSequenceKeypointNew( 1, Color2 )
-				} );
-
-				UIGradient.Rotation = 90;
-			end
-			
-			WorldRenderer : Connect( Position, Lifetime, Marker, RotationData or {
-				[ "Rotation / Enabled" ] = false,
-				[ "Rotation / Speed" ] = 0,
+			Beam.Color = ColorSequenceNew( {
+				ColorSequenceKeypointNew( 0, Color1 ),
+				ColorSequenceKeypointNew( 1, Color2 )
 			} );
+
+			Beam.LightInfluence = 0;
+			Beam.LightEmission = 1;
+
+			Beam.Width0 = Width;
+			Beam.Width1 = Width;
+
+			Beam.FaceCamera = true;
+			Beam.Enabled = true;
 		end
-	end )( );
+	
+		TaskDelay( Lifetime, function( )
+			TweenService.Create( TweenService, Beam, Info, {
+				Width0 = 0,
+				Width1 = 0
+			} ) : Play( ); TaskWait( Info.Time );
+
+			OriginAttachment.Destroy( OriginAttachment );
+			EndAttachment.Destroy( EndAttachment );
+		end )
+	end
+
+	function World : HitMarker( Transparency, Position, Lifetime, Size, Color1, Color2, RotationData )
+		const Marker = InstanceNew( "ImageLabel" ); do
+			Marker.Image = HitMarkerAsset;
+			--Marker.ImageColor3 = Color;
+
+			Marker.Size = UDim2New( 0, Size, 0, Size );
+
+			Marker.ImageTransparency = Transparency;
+			Marker.BackgroundTransparency = 1;
+			
+			Marker.Visible = true;
+		end
+
+		const UIGradient = InstanceNew( "UIGradient", Marker ); do
+			UIGradient.Color = ColorSequenceNew( {
+				ColorSequenceKeypointNew( 0, Color1 ),
+				ColorSequenceKeypointNew( 1, Color2 )
+			} );
+
+			UIGradient.Rotation = 90;
+		end
+		
+		WorldRenderer : Connect( Position, Lifetime, Marker, RotationData or {
+			[ "Rotation / Enabled" ] = false,
+			[ "Rotation / Speed" ] = 0,
+		} );
+	end
 end
 
 -- Functions
-const Scanning = { SilentTarget = nil, AimbotTarget = nil }; do
-	LPH_NO_VIRTUALIZE( function( )
-		const ScanPoints = {
-			Vector3New( 0, -1, 0 ),
-			Vector3YAxis,
+const Scanning = { SilentAimTarget = nil, AimbotTarget = nil }; do
+	const ScanPoints = {
+		Vector3New( 0, -1, 0 ),
+		Vector3YAxis,
 
-			Vector3New( -1, 0, 0 ),
-			Vector3New( 1, 0, 0 ),
+		Vector3New( -1, 0, 0 ),
+		Vector3New( 1, 0, 0 ),
 
-			Vector3New( 0, 0, -1 ),
-			Vector3New( 0, 0, 1 )
-		};
+		Vector3New( 0, 0, -1 ),
+		Vector3New( 0, 0, 1 )
+	};
 
-		function Scanning : GetOrigin( Base, Destination, Range )
-			for _, Point in ScanPoints do
-				const Direction = Point * Range;
-				const Origin = Base + Direction;
-	
-				if ( Utilities : CastBulletRay( Base, Direction ) ) then
-					continue;
-				end
+	function Scanning : GetOrigin( Base, Destination, Range )
+		for _, Point in ScanPoints do
+			const Direction = Point * Range;
+			const Origin = Base + Direction;
 
-				const HitCast = Utilities : CastBulletRay( Origin, ( Destination - Origin ).Unit * 1000 );
-
-				if ( not HitCast ) or ( not HitCast.HitHum ) then
-					continue;
-				end
-
-				return Origin;
+			if ( Utilities : CastBulletRay( Base, Direction ) ) then
+				continue;
 			end
 
-			return Base;
-		end
+			const HitCast = Utilities : CastBulletRay( Origin, ( Destination - Origin ).Unit * 1000 );
 
-		function Scanning : GetTargets( )
-			for Index, Value in { "SilentAim", "Aimbot" } do
-				const BaseFlag = `Combat / { Value }`;
-				local Value = nil;
-
-				if ( KeybindFlags[ `{ BaseFlag } / Enabled` ] ) then
-					const Range = Flags[ `{ BaseFlag } / Range / Value` ];
-					const Part = Flags[ `{ BaseFlag } / HitPart` ];
-
-					Value = Replicators : GetClosest( Range, Part );
-				end
-
-				self[ `{ Value }Target` ] = Value;
+			if ( not HitCast ) or ( not HitCast.HitHum ) then
+				continue;
 			end
+
+			return Origin;
 		end
 
-		function Scanning : Stepper( )
-			self : GetTargets( );
+		return Base;
+	end
+
+	function Scanning : GetTargets( )
+		for Index, Value in { "SilentAim", "Aimbot" } do
+			const BaseFlag = `Combat / { Value }`;
+			local ClosestObject = nil;
+
+			if ( KeybindFlags[ `{ BaseFlag } / Enabled` ] ) then
+				const Range = Flags[ `{ BaseFlag } / Range / Value` ];
+				const Part = Flags[ `{ BaseFlag } / HitPart` ];
+
+				ClosestObject = Replicators : GetClosest( Range, Part );
+			end
+
+			self[ `{ Value }Target` ] = ClosestObject;
 		end
-	end )( );
+	end
+
+	function Scanning : Stepper( )
+		self : GetTargets( );
+	end
 end
 
 const Legitbot = { }; do
-	LPH_NO_VIRTUALIZE( function( )
-		function Legitbot : Stepper( )
-			const Target = Scanning.AimbotTarget;
+	function Legitbot : Stepper( )
+		const Target = Scanning.AimbotTarget;
 
-			if ( not Target ) then
-				return;
-			end
-
-			const Smoothness = Flags[ "Combat / Aimbot / Smoothness" ];
-			const Destination = Target.Position;
-
-			CurrentCamera.CFrame = CameraCFrame : Lerp( CFrameLookAt( CameraCFrame.Position, Destination ), ( Smoothness ~= 0 and .04 * ( 1 / Smoothness ) ) or 1 );
+		if ( not Target ) then
+			return;
 		end
-	end )( );
+
+		const Smoothness = Flags[ "Combat / Aimbot / Smoothness" ];
+		const Destination = Target.Position;
+
+		CurrentCamera.CFrame = CameraCFrame : Lerp( CFrameLookAt( CameraCFrame.Position, Destination ), ( Smoothness ~= 0 and .04 * ( 1 / Smoothness ) ) or 1 );
+	end
 end
 
 const Ragebot = { }; do
@@ -1036,105 +1019,103 @@ const Ragebot = { }; do
 		Mag : set( MagAmmo - 1 ); ShootTick = GameTick;
 	end
 
-	LPH_NO_VIRTUALIZE( function( )
-		function Ragebot : GetClosest( Range, Options )
-			local Closest, ClosestOrigin, ClosestDistance = nil, nil, Range;
-			const LocalRoot = Controller : RootPart( );
+	function Ragebot : GetClosest( Range, Options )
+		local Closest, ClosestOrigin, ClosestDistance = nil, nil, Range;
+		const LocalRoot = Controller : RootPart( );
 
-			if ( not LocalRoot ) then
-				return;
+		if ( not LocalRoot ) then
+			return;
+		end
+
+		const OriginScanEnabled = Options.OriginScanEnabled;
+		const OriginScanRange = Options.OriginScanRange;
+		
+		const NoOcclusionCheck = Options.NoOcclusionCheck;
+		const SpawnProtection = Options.SpawnProtection;
+
+		for _, Object in Replicators : GetPlayers( false ) do
+			if ( not SpawnProtection ) then
+				const DataEntry = Object.DataEntry;
+
+				if ( ( GameTick - DataEntry.Tick ) < 6 ) and ( not DataEntry.Zombie ) then
+					continue;
+				end
 			end
 
-			const OriginScanEnabled = Options.OriginScanEnabled;
-			const OriginScanRange = Options.OriginScanRange;
+			const Collision = Object : Collision( );
+			const Character = Object : Character( );
+
+			if ( not Character ) or ( not Collision ) then
+				continue;
+			end
+
+			const Head = Character : FindFirstChild( "head" );
+
+			if ( not Head ) then
+				continue;
+			end
+
+			const Destination = Head.Position;
+			local Origin = LocalRoot.Position;
+
+			if ( OriginScanEnabled ) then
+				Origin = Scanning : GetOrigin( Origin, Destination, 1 + MathAbs( ( ( GameTick * 9 ) % 2 ) - 1 ) * OriginScanRange );
+			end
 			
-			const NoOcclusionCheck = Options.NoOcclusionCheck;
-			const SpawnProtection = Options.SpawnProtection;
+			const Direction = ( Destination - Origin );
 
-			for _, Object in Replicators : GetPlayers( false ) do
-				if ( not SpawnProtection ) then
-					const DataEntry = Object.DataEntry;
+			if ( not NoOcclusionCheck ) then
+				const Result = Utilities : CastBulletRay( Origin, Direction );
 
-					if ( ( GameTick - DataEntry.Tick ) < 6 ) and ( not DataEntry.Zombie ) then
-						continue;
-					end
-				end
-
-				const Collision = Object : Collision( );
-				const Character = Object : Character( );
-
-				if ( not Character ) or ( not Collision ) then
+				if ( not Result ) or ( not Result.HitHum ) then
 					continue;
 				end
-
-				const Head = Character : FindFirstChild( "head" );
-
-				if ( not Head ) then
-					continue;
-				end
-
-				const Destination = Head.Position;
-				local Origin = LocalRoot.Position;
-
-				if ( OriginScanEnabled ) then
-					Origin = Scanning : GetOrigin( Origin, Destination, 1 + MathAbs( ( ( GameTick * 9 ) % 2 ) - 1 ) * OriginScanRange );
-				end
-				
-				const Direction = ( Destination - Origin );
-
-				if ( not NoOcclusionCheck ) then
-					const Result = Utilities : CastBulletRay( Origin, Direction );
-	
-					if ( not Result ) or ( not Result.HitHum ) then
-						continue;
-					end
-				end
-
-				const Distance = Direction.Magnitude;
-
-				if ( Distance <= ClosestDistance ) then
-					Closest, ClosestOrigin, ClosestDistance = Head, Origin, Distance;
-				end
 			end
 
-			return Closest, ClosestOrigin;
-		end
+			const Distance = Direction.Magnitude;
 
-		function Ragebot : Stepper( )
-			if ( not KeybindFlags[ "Combat / Ragebot / Enabled" ] ) or ( not Controller : RootPart( ) ) then
-				return;
-			end
-
-			const Target, Origin = self : GetClosest( 1000, {
-				OriginScanEnabled = Flags[ "Combat / Ragebot / OriginScan / Enabled" ];
-				OriginScanRange = Flags[ "Combat / Ragebot / OriginScan / Range" ];
-				
-				NoOcclusionCheck = Flags[ "Combat / Ragebot / NoOcclusionCheck" ];
-				SpawnProtection = Flags[ "Combat / Ragebot / SpawnProtection" ];
-			} );
-
-			if ( not Target ) then
-				return;
-			end
-
-			const Pellets = ( Flags[ "Combat / Ragebot / TripleTap" ] and 3 ) or 1;
-			const TracerData = { [ "Transparency" ] = 0 }; do
-				const BaseFlag = "Combat / Ragebot / BulletTracers";
-
-				TracerData.Lifetime = Flags[ `{ BaseFlag } / Lifetime` ];
-				TracerData.Enabled = Flags[ `{ BaseFlag } / Enabled` ];
-
-				TracerData.Color1 = Flags[ `{ BaseFlag } / Color1` ];
-				TracerData.Color2 = Flags[ `{ BaseFlag } / Color2` ];
-
-				TracerData.Width = Flags[ `{ BaseFlag } / Width` ];
-			end
-
-			for _ = 1, Pellets do
-				self : Shoot( Target.Position, Origin, Target, TracerData );
+			if ( Distance <= ClosestDistance ) then
+				Closest, ClosestOrigin, ClosestDistance = Head, Origin, Distance;
 			end
 		end
-	end )( );
+
+		return Closest, ClosestOrigin;
+	end
+
+	function Ragebot : Stepper( )
+		if ( not KeybindFlags[ "Combat / Ragebot / Enabled" ] ) or ( not Controller : RootPart( ) ) then
+			return;
+		end
+
+		const Target, Origin = self : GetClosest( 1000, {
+			OriginScanEnabled = Flags[ "Combat / Ragebot / OriginScan / Enabled" ];
+			OriginScanRange = Flags[ "Combat / Ragebot / OriginScan / Range" ];
+			
+			NoOcclusionCheck = Flags[ "Combat / Ragebot / NoOcclusionCheck" ];
+			SpawnProtection = Flags[ "Combat / Ragebot / SpawnProtection" ];
+		} );
+
+		if ( not Target ) then
+			return;
+		end
+
+		const Pellets = ( Flags[ "Combat / Ragebot / TripleTap" ] and 3 ) or 1;
+		const TracerData = { [ "Transparency" ] = 0 }; do
+			const BaseFlag = "Combat / Ragebot / BulletTracers";
+
+			TracerData.Lifetime = Flags[ `{ BaseFlag } / Lifetime` ];
+			TracerData.Enabled = Flags[ `{ BaseFlag } / Enabled` ];
+
+			TracerData.Color1 = Flags[ `{ BaseFlag } / Color1` ];
+			TracerData.Color2 = Flags[ `{ BaseFlag } / Color2` ];
+
+			TracerData.Width = Flags[ `{ BaseFlag } / Width` ];
+		end
+
+		for _ = 1, Pellets do
+			self : Shoot( Target.Position, Origin, Target, TracerData );
+		end
+	end
 end
 
 local Library = { }; do
@@ -4505,765 +4486,851 @@ end
 const Visuals = { }; do
 	const CachedObjects = { };
 
-	LPH_NO_VIRTUALIZE( function( )
-		function Visuals : Players( )
-			const Configuration = { }; do
-				const MasterSwitch = Flags[ "Visuals / Players / Enabled" ];
+	function Visuals : Players( )
+		const Configuration = { }; do
+			const MasterSwitch = Flags[ "Visuals / Players / Enabled" ];
 
-				if ( not MasterSwitch ) then
-					return TableClear( CachedObjects );
+			if ( not MasterSwitch ) then
+				return TableClear( CachedObjects );
+			end
+
+			-- Health Bar
+			do
+				const Enabled = Flags[ "Visuals / Players / HealthBar / Enabled" ];
+				const Color = Flags[ "Visuals / Players / HealthBar / Color" ];
+
+				if ( Enabled ) then
+					Configuration.HealthBar = Color;
 				end
+			end
 
-				-- Health Bar
-				do
-					const Enabled = Flags[ "Visuals / Players / HealthBar / Enabled" ];
-					const Color = Flags[ "Visuals / Players / HealthBar / Color" ];
+			-- Country
+			do
+				const Enabled = Flags[ "Visuals / Players / Country / Enabled" ];
+				const Color = Flags[ "Visuals / Players / Country / Color" ];
 
-					if ( Enabled ) then
-						Configuration.HealthBar = Color;
-					end
+				if ( Enabled ) then
+					Configuration.Tool = Color;
 				end
+			end
 
-				-- Country
-				do
-					const Enabled = Flags[ "Visuals / Players / Country / Enabled" ];
-					const Color = Flags[ "Visuals / Players / Country / Color" ];
+			-- Name
+			do
+				const Enabled = Flags[ "Visuals / Players / Name / Enabled" ];
+				const Color = Flags[ "Visuals / Players / Name / Color" ];
 
-					if ( Enabled ) then
-						Configuration.Tool = Color;
-					end
+				if ( Enabled ) then
+					Configuration.Name = Color;
 				end
+			end
 
-				-- Name
-				do
-					const Enabled = Flags[ "Visuals / Players / Name / Enabled" ];
-					const Color = Flags[ "Visuals / Players / Name / Color" ];
+			-- Box
+			do
+				const Enabled = Flags[ "Visuals / Players / Box / Enabled" ];
+				const Color = Flags[ "Visuals / Players / Box / Color" ];
 
-					if ( Enabled ) then
-						Configuration.Name = Color;
-					end
+				if ( Enabled ) then
+					Configuration.Box = Color;
 				end
+			end
+		
+			CacheObject.Configuration = Configuration;
+		end
 
-				-- Box
-				do
-					const Enabled = Flags[ "Visuals / Players / Box / Enabled" ];
-					const Color = Flags[ "Visuals / Players / Box / Color" ];
+		for _, Object in Replicators : GetPlayers( true ) do
+			const RootPart, Character = Object : RootPart( );
 
-					if ( Enabled ) then
-						Configuration.Box = Color;
-					end
-				end
+			if ( not RootPart ) then
+				continue;
+			end
 			
-				CacheObject.Configuration = Configuration;
+			const CollisionObject = Object : Collision( );
+
+			if ( not CollisionObject ) then
+				continue;
 			end
 
-			for _, Object in Replicators : GetPlayers( true ) do
-				const RootPart, Character = Object : RootPart( );
+			const Player = Object : Player( );
+			const Name = Object : Name( );
 
-				if ( not RootPart ) then
-					continue;
-				end
+			if ( not Player ) then
+				continue;
+			end
+
+			const ESPObject = CachedObjects[ Character ] or CacheObject : Initiate( Name, function( Self )
+				CachedObjects[ Character ] = Self;
+			end ); do
+				const Health, MaxHealth = Object : Health( );
+				ESPObject.MaxHealth = MaxHealth;
+				ESPObject.Health = Health;
 				
-				const CollisionObject = Object : Collision( );
+				if ( Health >= 1 ) then
+					const Size = CollisionObject : GetExtentsSize( );
+					const Country = Object : Country( );
 
-				if ( not CollisionObject ) then
-					continue;
-				end
-
-				const Player = Object : Player( );
-				const Name = Object : Name( );
-
-				if ( not Player ) then
-					continue;
-				end
-
-				const ESPObject = CachedObjects[ Character ] or CacheObject : Initiate( Name, function( Self )
-					CachedObjects[ Character ] = Self;
-				end ); do
-					const Health, MaxHealth = Object : Health( );
-					ESPObject.MaxHealth = MaxHealth;
-					ESPObject.Health = Health;
+					ESPObject.Offset = Vector3New( 0, -.6, 0 );
 					
-					if ( Health >= 1 ) then
-						const Size = CollisionObject : GetExtentsSize( );
-						const Country = Object : Country( );
+					ESPObject.Position = RootPart.Position;
+					ESPObject.Tool = Country or "Unknown";
 
-						ESPObject.Offset = Vector3New( 0, -.6, 0 );
-						
-						ESPObject.Position = RootPart.Position;
-						ESPObject.Tool = Country or "Unknown";
+					ESPObject.Size = Size;
 
-						ESPObject.Size = Size;
-
-						ESPObject : Respawn( );
-					end
-
-					if ( Health <= 0 ) then
-						ESPObject : Died( );
-					end
-
-					ESPObject : Stepper( );
+					ESPObject : Respawn( );
 				end
+
+				if ( Health <= 0 ) then
+					ESPObject : Died( );
+				end
+
+				ESPObject : Stepper( );
 			end
 		end
+	end
 
-		function Visuals : Screen( )
-			const NumSides, Circle = 67, DrawingImmediate.Circle;
+	function Visuals : Screen( )
+		const NumSides, Circle = 67, DrawingImmediate.Circle;
 
-			for Index, Value in { "SilentAim", "Aimbot" } do
-				const BaseFlag = `Combat / { Value }`;
+		for Index, Value in { "SilentAim", "Aimbot" } do
+			const BaseFlag = `Combat / { Value }`;
 
-				if ( Flags[ `{ BaseFlag } / Range / Enabled` ] ) then
-					const Color = Flags[ `{ BaseFlag } / Range / Color` ];
-					const Range = Flags[ `{ BaseFlag } / Range / Value` ];
+			if ( Flags[ `{ BaseFlag } / Range / Enabled` ] ) then
+				const Color = Flags[ `{ BaseFlag } / Range / Color` ];
+				const Range = Flags[ `{ BaseFlag } / Range / Value` ];
 
-					Circle( Center, Range, Black, 1, NumSides, 3 ); -- Outline
-					Circle( Center, Range, Color, 1, NumSides, 1 ); -- Main
-				end
+				Circle( Center, Range, Black, 1, NumSides, 3 ); -- Outline
+				Circle( Center, Range, Color, 1, NumSides, 1 ); -- Main
 			end
 		end
+	end
 
-		function Visuals : Stepper( )
-			self : Players( );
-			self : Screen( );
-		end
-	end )( );
+	function Visuals : Stepper( )
+		self : Players( );
+		self : Screen( );
+	end
 end
 
 const Setters = { }; do
 	local PenetratableStamp = 0;
 
-	LPH_NO_VIRTUALIZE( function( )
-		function Setters : Stepper( )
-			const Dimensions = CurrentCamera.ViewportSize;
-			CameraCFrame = CurrentCamera.CFrame;
+	function Setters : Stepper( )
+		const Dimensions = CurrentCamera.ViewportSize;
+		CameraCFrame = CurrentCamera.CFrame;
 
-			Center = Dimensions * .5;
-			GameTick = tick( );
+		Center = Dimensions * .5;
+		GameTick = tick( );
 
-			const RagebotEnabled = Flags[ "Combat / Ragebot / Enabled" ]; do
-				Storage : Add( "Ragebot / REM_ANIM_PROCEED", RagebotEnabled and not Flags[ "Combat / Ragebot / Effects" ] );
-				Storage : Add( "Ragebot / AWALL_PROCEED", RagebotEnabled and Flags[ "Combat / Ragebot / AutoWall" ] );
-			end
-
-			const FireRateEnabled = Flags[ "Combat / Mods / FireRate / Enabled" ]; do
-				Storage : Add( "Mods / FIRE_RATE_MULTI", ( FireRateEnabled and Flags[ "Combat / Mods / FireRate / Multiplier" ] ) or 1 );
-			end
-
-			if ( ( GameTick - PenetratableStamp ) > 4 ) and Storage : Get( "Ragebot / AWALL_PROCEED" ) then
-				const Penetratables = Workspace : QueryDescendants( ScannerQuery ); do
-					Storage : Add( "Ragebot / PENETRATABLES", Penetratables );
-				end
-
-				PenetratableStamp = GameTick;
-			end
+		const RagebotEnabled = Flags[ "Combat / Ragebot / Enabled" ]; do
+			Storage : Add( "Ragebot / REM_ANIM_PROCEED", RagebotEnabled and not Flags[ "Combat / Ragebot / Effects" ] );
+			Storage : Add( "Ragebot / AWALL_PROCEED", RagebotEnabled and Flags[ "Combat / Ragebot / AutoWall" ] );
 		end
-	end )( );
+
+		const FireRateEnabled = Flags[ "Combat / Mods / FireRate / Enabled" ]; do
+			Storage : Add( "Mods / FIRE_RATE_MULTI", ( FireRateEnabled and Flags[ "Combat / Mods / FireRate / Multiplier" ] ) or 1 );
+		end
+
+		if ( ( GameTick - PenetratableStamp ) > 4 ) and Storage : Get( "Ragebot / AWALL_PROCEED" ) then
+			const Penetratables = Workspace : QueryDescendants( ScannerQuery ); do
+				Storage : Add( "Ragebot / PENETRATABLES", Penetratables );
+			end
+
+			PenetratableStamp = GameTick;
+		end
+	end
 end
 
 const Misc = { }; do
 	local CurrentOrientation = 0;
 
-	LPH_NO_VIRTUALIZE( function( )
-		function Misc : Stepper( )
-			self : Player( );
+	function Misc : Stepper( )
+		self : Player( );
+	end
+
+	function Misc : Player( )
+		const StateObject, CollisionObject = Controller : Get( );
+
+		if ( not StateObject ) or ( not CollisionObject ) then
+			return;
 		end
 
-		function Misc : Player( )
-			const StateObject, CollisionObject = Controller : Get( );
+		const States = StateObject.states;
+		const Values = StateObject.values;
 
-			if ( not StateObject ) or ( not CollisionObject ) then
-				return;
+		-- Walk Speed
+		do
+			const Enabled = KeybindFlags[ "Misc / Player / WalkSpeed / Enabled" ];
+			const Value = Flags[ "Misc / Player / WalkSpeed / Multiplier" ];
+
+			const SpeedMultiplier = States.speed_multiplier;
+			
+			if ( not Enabled ) and ( SpeedMultiplier : get( ) == Value ) then
+				SpeedMultiplier : set( 1 );
+			end -- i don't like elseif statements, sorry
+
+			if ( Enabled ) then
+				SpeedMultiplier : set( Value );
 			end
+		end
 
-			const States = StateObject.states;
-			const Values = StateObject.values;
+		-- Anti Aim
+		do
+			const Enabled = Flags[ "Misc / Player / AntiAim / Enabled" ];
+			const Speed = Flags[ "Misc / Player / AntiAim / Speed" ];
 
-			-- Walk Speed
-			do
-				const Enabled = KeybindFlags[ "Misc / Player / WalkSpeed / Enabled" ];
-				const Value = Flags[ "Misc / Player / WalkSpeed / Multiplier" ];
+			const NewValue = ( Enabled and 360 ) or 80;
+			const FOV = Values.fov;
 
-				const SpeedMultiplier = States.speed_multiplier;
-				
-				if ( not Enabled ) and ( SpeedMultiplier : get( ) == Value ) then
-					SpeedMultiplier : set( 1 );
-				end -- i don't like elseif statements, sorry
-
-				if ( Enabled ) then
-					SpeedMultiplier : set( Value );
-				end
+			if ( FOV : get( ) ~= NewValue ) then
+				FOV : set( NewValue );
 			end
-
-			-- Anti Aim
-			do
-				const Enabled = Flags[ "Misc / Player / AntiAim / Enabled" ];
-				const Speed = Flags[ "Misc / Player / AntiAim / Speed" ];
-
-				const NewValue = ( Enabled and 360 ) or 80;
-				const FOV = Values.fov;
-
-				if ( FOV : get( ) ~= NewValue ) then
-					FOV : set( NewValue );
-				end
-				
-				if ( Enabled ) then
-					const HumanoidRootPart = CollisionObject : FindFirstChild( "HumanoidRootPart" );
-					CurrentOrientation = ( CurrentOrientation + ( Speed * .002 ) ) % ( Math360Rad )
-				
-					if ( HumanoidRootPart ) then
-						const Spinbot = Flags[ "Misc / Player / AntiAim / Spinbot" ];
-
-						const CoordinateFrame = CFrameNew( HumanoidRootPart.Position );
-						const Yaw = ( Spinbot and CurrentOrientation ) or 0;
-
-						HumanoidRootPart.CFrame = ( CoordinateFrame * CFrameFromEulerAnglesYXZ( 0, Yaw, 0 ) );
-					end
-				end
-			end
-
-			-- Anchor
-			do
+			
+			if ( Enabled ) then
 				const HumanoidRootPart = CollisionObject : FindFirstChild( "HumanoidRootPart" );
-				
+				CurrentOrientation = ( CurrentOrientation + ( Speed * .002 ) ) % ( Math360Rad )
+			
 				if ( HumanoidRootPart ) then
-					const Enabled = KeybindFlags[ "Misc / Player / Anchor / Enabled" ];
+					const Spinbot = Flags[ "Misc / Player / AntiAim / Spinbot" ];
 
-					if ( Enabled ) and ( not HumanoidRootPart.Anchored ) then
-						HumanoidRootPart.Anchored = true;
-					end
+					const CoordinateFrame = CFrameNew( HumanoidRootPart.Position );
+					const Yaw = ( Spinbot and CurrentOrientation ) or 0;
 
-					if ( not Enabled ) and ( HumanoidRootPart.Anchored ) then
-						HumanoidRootPart.Anchored = false;
-					end
+					HumanoidRootPart.CFrame = ( CoordinateFrame * CFrameFromEulerAnglesYXZ( 0, Yaw, 0 ) );
 				end
 			end
 		end
-	end )( );
+
+		-- Anchor
+		do
+			const HumanoidRootPart = CollisionObject : FindFirstChild( "HumanoidRootPart" );
+			
+			if ( HumanoidRootPart ) then
+				const Enabled = KeybindFlags[ "Misc / Player / Anchor / Enabled" ];
+
+				if ( Enabled ) and ( not HumanoidRootPart.Anchored ) then
+					HumanoidRootPart.Anchored = true;
+				end
+
+				if ( not Enabled ) and ( HumanoidRootPart.Anchored ) then
+					HumanoidRootPart.Anchored = false;
+				end
+			end
+		end
+	end
 end
 
 -- Interface
 do
-	LPH_NO_VIRTUALIZE( function( )
-		Interface = Library.new( {
-			[ "size" ] = Vector2New( 438, 505 ),
+	Interface = Library.new( {
+		[ "size" ] = Vector2New( 438, 505 ),
 
-			[ "name" ] = "Homohack | Operation One ( @dementia_enjoyr )",
+		[ "name" ] = "Homohack | Operation One ( @dementia_enjoyr )",
 
-			[ "subFolder" ] = "Operation-One",
-			[ "folder" ] = "Homohack",
+		[ "subFolder" ] = "Operation-One",
+		[ "folder" ] = "Homohack",
+		
+		[ "theme" ] = {
+			[ "tabButton" ] = ColorSequence.new( Color3.fromRGB( 22, 22, 22 ), Color3.fromRGB( 13, 13, 13 ) ),
+
+			[ "playerPreviewBackground" ] = Color3.fromRGB( 15, 15, 15 ),
+			[ "dropdownIndicator" ] = Color3.fromRGB( 38, 38, 38 ),
+			[ "activeTabButton" ] = Color3.fromRGB( 12, 12, 12 ),
+
+			[ "background" ] = Color3.fromRGB( 13, 13, 13 ),
+			[ "component" ] = Color3.fromRGB( 13, 13, 13 ),
+			[ "accent" ] = Color3.fromRGB( 182, 142, 235 ),
+			[ "darkText" ] = Color3.fromRGB( 85, 85, 85 ),
 			
-			[ "theme" ] = {
-				[ "tabButton" ] = ColorSequence.new( Color3.fromRGB( 22, 22, 22 ), Color3.fromRGB( 13, 13, 13 ) ),
+			[ "text" ] = Color3.fromRGB( 204, 204, 204 ),
+			[ "icon" ] = Color3.fromRGB( 204, 204, 204 ),
+			[ "section" ] = Color3.fromRGB( 19, 19, 19 ),
+			
+			[ "stroke1" ] = Color3.fromRGB( 29, 29, 29 ),
+			[ "stroke0" ] = Color3.fromRGB( 0, 0, 0 ),
+		},
+	} );
 
-				[ "playerPreviewBackground" ] = Color3.fromRGB( 15, 15, 15 ),
-				[ "dropdownIndicator" ] = Color3.fromRGB( 38, 38, 38 ),
-				[ "activeTabButton" ] = Color3.fromRGB( 12, 12, 12 ),
+	const CombatTab = Interface : tab( "Combat" ); do
+		const RagebotGroup = CombatTab : section( {
+			[ "name" ] = "Ragebot",
+			[ "side" ] = LEFT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			RagebotGroup : toggle( {
+				[ "flag" ] = "Combat / Ragebot / Enabled",
+				[ "name" ] = "Enabled",
 
-				[ "background" ] = Color3.fromRGB( 13, 13, 13 ),
-				[ "component" ] = Color3.fromRGB( 13, 13, 13 ),
-				[ "accent" ] = Color3.fromRGB( 182, 142, 235 ),
-				[ "darkText" ] = Color3.fromRGB( 85, 85, 85 ),
-				
-				[ "text" ] = Color3.fromRGB( 204, 204, 204 ),
-				[ "icon" ] = Color3.fromRGB( 204, 204, 204 ),
-				[ "section" ] = Color3.fromRGB( 19, 19, 19 ),
-				
-				[ "stroke1" ] = Color3.fromRGB( 29, 29, 29 ),
-				[ "stroke0" ] = Color3.fromRGB( 0, 0, 0 ),
-			},
-		} );
-
-		const CombatTab = Interface : tab( "Combat" ); do
-			const RagebotGroup = CombatTab : section( {
+				[ "default" ] = false,
+			} ) : keybind( {
+				[ "flag" ] = "Combat / Ragebot / Key",
 				[ "name" ] = "Ragebot",
-				[ "side" ] = LEFT_SIDE,
-				[ "autoSize" ] = true,
+
+				[ "default" ] = Enum.KeyCode.X,
+
+				[ "affectToggle" ] = false,
+				[ "hold" ] = false,
+			} );
+
+			RagebotGroup : divider( );
+
+			RagebotGroup : toggle( {
+				[ "tooltip" ] = "Will also target people with spawn protection.",
+				[ "flag" ] = "Combat / Ragebot / SpawnProtection",
+				[ "name" ] = "Spawn Protection",
+
+				[ "default" ] = false,
+			} );
+
+			RagebotGroup : toggle( {
+				[ "flag" ] = "Combat / Ragebot / TripleTap",
+				[ "name" ] = "Triple Tap",
+
+				[ "tooltip" ] = "Shoots 3 times",
+
+				[ "default" ] = false,
+			} );
+
+			RagebotGroup : divider( );
+
+			RagebotGroup : toggle( {
+				[ "flag" ] = "Combat / Ragebot / OriginScan / Enabled",
+				[ "name" ] = "Origin Scan",
+				[ "default" ] = true,
+			} );
+
+			RagebotGroup : slider( {
+				[ "flag" ] = "Combat / Ragebot / OriginScan / Range",
+				[ "name" ] = "Range",
+				[ "default" ] = 11,
+				[ "min" ] = 1,
+				[ "max" ] = 10,
+			} );
+
+			RagebotGroup : divider( );
+
+			RagebotGroup : toggle( {
+				[ "flag" ] = "Combat / Ragebot / AutoWall",
+				[ "name" ] = "Auto Wall",
+				[ "default" ] = false,
+			} );
+
+			RagebotGroup : toggle( {
+				[ "flag" ] = "Combat / Ragebot / Effects",
+				[ "name" ] = "Effects",
+				[ "default" ] = true,
+			} );
+
+			RagebotGroup : divider( );
+
+			const TracerToggle = RagebotGroup : toggle( {
+				[ "flag" ] = "Combat / Ragebot / BulletTracers / Enabled",
+				[ "name" ] = "Tracers",
+
+				[ "default" ] = false,
 			} ); do
-				RagebotGroup : toggle( {
-					[ "flag" ] = "Combat / Ragebot / Enabled",
-					[ "name" ] = "Enabled",
+				TracerToggle : colorpicker( {
+					[ "flag" ] = "Combat / Ragebot / BulletTracers / Color1",
+					[ "name" ] = "Color 1",
 
-					[ "default" ] = false,
-				} ) : keybind( {
-					[ "flag" ] = "Combat / Ragebot / Key",
-					[ "name" ] = "Ragebot",
-
-					[ "default" ] = Enum.KeyCode.X,
-
-					[ "affectToggle" ] = false,
-					[ "hold" ] = false,
-				} );
-
-				RagebotGroup : divider( );
-
-				RagebotGroup : toggle( {
-					[ "tooltip" ] = "Will also target people with spawn protection.",
-					[ "flag" ] = "Combat / Ragebot / SpawnProtection",
-					[ "name" ] = "Spawn Protection",
-
-					[ "default" ] = false,
-				} );
-
-				RagebotGroup : toggle( {
-					[ "flag" ] = "Combat / Ragebot / TripleTap",
-					[ "name" ] = "Triple Tap",
-
-					[ "tooltip" ] = "Shoots 3 times",
-
-					[ "default" ] = false,
-				} );
-
-				RagebotGroup : divider( );
-
-				RagebotGroup : toggle( {
-					[ "flag" ] = "Combat / Ragebot / OriginScan / Enabled",
-					[ "name" ] = "Origin Scan",
-					[ "default" ] = true,
-				} );
-
-				RagebotGroup : slider( {
-					[ "flag" ] = "Combat / Ragebot / OriginScan / Range",
-					[ "name" ] = "Range",
-					[ "default" ] = 11,
-					[ "min" ] = 1,
-					[ "max" ] = 10,
-				} );
-
-				RagebotGroup : divider( );
-
-				RagebotGroup : toggle( {
-					[ "flag" ] = "Combat / Ragebot / AutoWall",
-					[ "name" ] = "Auto Wall",
-					[ "default" ] = false,
-				} );
-
-				RagebotGroup : toggle( {
-					[ "flag" ] = "Combat / Ragebot / Effects",
-					[ "name" ] = "Effects",
-					[ "default" ] = true,
-				} );
-
-				RagebotGroup : divider( );
-
-				const TracerToggle = RagebotGroup : toggle( {
-					[ "flag" ] = "Combat / Ragebot / BulletTracers / Enabled",
-					[ "name" ] = "Tracers",
-
-					[ "default" ] = false,
-				} ); do
-					TracerToggle : colorpicker( {
-						[ "flag" ] = "Combat / Ragebot / BulletTracers / Color1",
-						[ "name" ] = "Color 1",
-
-						[ "color" ] = White,
-						[ "transparency" ] = nil,
-						
-						[ "drawingTransparency" ] = false,
-					} );
-
-					TracerToggle : colorpicker( {
-						[ "flag" ] = "Combat / Ragebot / BulletTracers / Color2",
-						[ "name" ] = "Color 2",
-
-						[ "color" ] = White,
-
-						[ "drawingTransparency" ] = false,
-						[ "transparency" ] = nil,
-					} );
-				end
-
-				RagebotGroup : slider( {
-					[ "flag" ] = "Combat / Ragebot / BulletTracers / Lifetime",
-					[ "name" ] = "Lifetime",
-					[ "default" ] = 1,
-					[ "min" ] = 1,
-					[ "max" ] = 10,
-				} );
-
-				RagebotGroup : slider( {
-					[ "flag" ] = "Combat / Ragebot / BulletTracers / Width",
-					[ "name" ] = "Width",
-
-					[ "default" ] = .1,
-					[ "step" ] = .1,
-					
-					[ "min" ] = .1,
-					[ "max" ] = 10,
-				} );
-			end
-
-			const AimbotGroup = CombatTab : section( {
-				[ "name" ] = "Aim Assistance",
-				[ "side" ] = RIGHT_SIDE,
-				[ "autoSize" ] = true,
-			} ); do
-				const AimToggle = AimbotGroup : toggle( {
-					[ "flag" ] = "Combat / Aimbot / Enabled",
-					[ "name" ] = "Enabled",
-
-					[ "default" ] = false,
-				} );
-
-				AimToggle : keybind( {
-					[ "default" ] = Enum.UserInputType.MouseButton2,
-
-					[ "flag" ] = "Combat / Aimbot / Key",
-					[ "name" ] = "Aim Assistance",
-					
-					[ "affectToggle" ] = false,
-					[ "hold" ] = true,
-				} );
-
-				AimbotGroup : divider( );
-
-				const RangeToggle = AimbotGroup : toggle( {
-					[ "flag" ] = "Combat / Aimbot / Range / Enabled",
-					[ "name" ] = "Visualize Range",
-					[ "default" ] = false,
-				} );
-
-				RangeToggle : colorpicker( {
-					[ "name" ] = "Color",
-					[ "flag" ] = "Combat / Aimbot / Range / Color",
 					[ "color" ] = White,
 					[ "transparency" ] = nil,
+					
 					[ "drawingTransparency" ] = false,
 				} );
 
-				AimbotGroup : slider( {
-					[ "flag" ] = "Combat / Aimbot / Range / Value",
-					[ "name" ] = "Value",
-					[ "default" ] = 0,
-					[ "min" ] = 0,
-					[ "max" ] = 500,
-				} );
+				TracerToggle : colorpicker( {
+					[ "flag" ] = "Combat / Ragebot / BulletTracers / Color2",
+					[ "name" ] = "Color 2",
 
-				AimbotGroup : slider( {
-					[ "flag" ] = "Combat / Aimbot / Smoothness",
-					[ "name" ] = "Smoothness",
-					[ "default" ] = 0,
-					[ "min" ] = 0,
-					[ "max" ] = 10,
-				} );
+					[ "color" ] = White,
 
-				AimbotGroup : divider( );
-
-				AimbotGroup : dropdown( {
-					[ "flag" ] = "Combat / Aimbot / HitPart",
-					[ "name" ] = "Hit Part",
-					[ "options" ] = { "torso", "head" },
-					[ "default" ] = "head",
+					[ "drawingTransparency" ] = false,
+					[ "transparency" ] = nil,
 				} );
 			end
 
-			const SilentGroup = CombatTab : section( {
-				[ "name" ] = "Silent Aim",
-				[ "side" ] = LEFT_SIDE,
-				[ "autoSize" ] = true,
-			} ); do
-				SilentGroup : toggle( {
-					[ "flag" ] = "Combat / SilentAim / Enabled",
-					[ "name" ] = "Enabled",
-					[ "default" ] = false,
-				} );
+			RagebotGroup : slider( {
+				[ "flag" ] = "Combat / Ragebot / BulletTracers / Lifetime",
+				[ "name" ] = "Lifetime",
+				[ "default" ] = 1,
+				[ "min" ] = 1,
+				[ "max" ] = 10,
+			} );
+
+			RagebotGroup : slider( {
+				[ "flag" ] = "Combat / Ragebot / BulletTracers / Width",
+				[ "name" ] = "Width",
+
+				[ "default" ] = .1,
+				[ "step" ] = .1,
 				
-				SilentGroup : divider( );
+				[ "min" ] = .1,
+				[ "max" ] = 10,
+			} );
+		end
 
-				SilentGroup : toggle( {
-					[ "flag" ] = "Combat / SilentAim / Range / Enabled",
-					[ "name" ] = "Visualize Range",
-					[ "default" ] = false,
-				} ) : colorpicker( {
-					[ "name" ] = "Color",
+		const AimbotGroup = CombatTab : section( {
+			[ "name" ] = "Aim Assistance",
+			[ "side" ] = RIGHT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			const AimToggle = AimbotGroup : toggle( {
+				[ "flag" ] = "Combat / Aimbot / Enabled",
+				[ "name" ] = "Enabled",
 
-					[ "flag" ] = "Combat / SilentAim / Range / Color",
-					[ "color" ] = White,
+				[ "default" ] = false,
+			} );
 
-					[ "drawingTransparency" ] = false,
-					[ "transparency" ] = nil,
-				} );
+			AimToggle : keybind( {
+				[ "default" ] = Enum.UserInputType.MouseButton2,
 
-				SilentGroup : slider( {
-					[ "flag" ] = "Combat / SilentAim / Range / Value",
-					[ "name" ] = "Value",
-					[ "default" ] = 0,
-					[ "min" ] = 0,
-					[ "max" ] = 500,
-				} );
+				[ "flag" ] = "Combat / Aimbot / Key",
+				[ "name" ] = "Aim Assistance",
+				
+				[ "affectToggle" ] = false,
+				[ "hold" ] = true,
+			} );
 
-				SilentGroup : divider( );
+			AimbotGroup : divider( );
 
-				SilentGroup : dropdown( {
-					[ "flag" ] = "Combat / SilentAim / HitPart",
-					[ "name" ] = "Hit Part",
+			const RangeToggle = AimbotGroup : toggle( {
+				[ "flag" ] = "Combat / Aimbot / Range / Enabled",
+				[ "name" ] = "Visualize Range",
+				[ "default" ] = false,
+			} );
 
-					[ "options" ] = { "torso", "head" },
-					[ "default" ] = "head",
-				} );
+			RangeToggle : colorpicker( {
+				[ "name" ] = "Color",
+				[ "flag" ] = "Combat / Aimbot / Range / Color",
+				[ "color" ] = White,
+				[ "transparency" ] = nil,
+				[ "drawingTransparency" ] = false,
+			} );
+
+			AimbotGroup : slider( {
+				[ "flag" ] = "Combat / Aimbot / Range / Value",
+				[ "name" ] = "Value",
+				[ "default" ] = 0,
+				[ "min" ] = 0,
+				[ "max" ] = 500,
+			} );
+
+			AimbotGroup : slider( {
+				[ "flag" ] = "Combat / Aimbot / Smoothness",
+				[ "name" ] = "Smoothness",
+				[ "default" ] = 0,
+				[ "min" ] = 0,
+				[ "max" ] = 10,
+			} );
+
+			AimbotGroup : divider( );
+
+			AimbotGroup : dropdown( {
+				[ "flag" ] = "Combat / Aimbot / HitPart",
+				[ "name" ] = "Hit Part",
+				[ "options" ] = { "torso", "head" },
+				[ "default" ] = "head",
+			} );
+		end
+
+		const SilentGroup = CombatTab : section( {
+			[ "name" ] = "Silent Aim",
+			[ "side" ] = LEFT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			SilentGroup : toggle( {
+				[ "flag" ] = "Combat / SilentAim / Enabled",
+				[ "name" ] = "Enabled",
+				[ "default" ] = false,
+			} );
+			
+			SilentGroup : divider( );
+
+			SilentGroup : toggle( {
+				[ "flag" ] = "Combat / SilentAim / Range / Enabled",
+				[ "name" ] = "Visualize Range",
+				[ "default" ] = false,
+			} ) : colorpicker( {
+				[ "name" ] = "Color",
+
+				[ "flag" ] = "Combat / SilentAim / Range / Color",
+				[ "color" ] = White,
+
+				[ "drawingTransparency" ] = false,
+				[ "transparency" ] = nil,
+			} );
+
+			SilentGroup : slider( {
+				[ "flag" ] = "Combat / SilentAim / Range / Value",
+				[ "name" ] = "Value",
+				[ "default" ] = 0,
+				[ "min" ] = 0,
+				[ "max" ] = 500,
+			} );
+
+			SilentGroup : divider( );
+
+			SilentGroup : dropdown( {
+				[ "flag" ] = "Combat / SilentAim / HitPart",
+				[ "name" ] = "Hit Part",
+
+				[ "options" ] = { "torso", "head" },
+				[ "default" ] = "head",
+			} );
+		end
+
+		const ModsGroup = CombatTab : section( {
+			[ "name" ] = "Mods",
+			[ "side" ] = RIGHT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			ModsGroup : toggle( {
+				[ "flag" ] = "Combat / Mods / FireRate / Enabled",
+				[ "name" ] = "Firerate Modifier",
+
+				[ "default" ] = false,
+			} );
+
+			ModsGroup : slider( {
+				[ "flag" ] = "Combat / Mods / FireRate / Multiplier",
+				[ "name" ] = "Multiplier",
+				
+				[ "default" ] = 1,
+				[ "step" ] = .1,
+
+				[ "max" ] = 10,
+				[ "min" ] = 1,
+			} );
+
+			ModsGroup : divider( );
+
+			ModsGroup : toggle( {
+				[ "flag" ] = "Combat / Mods / NoMuzzleFlash",
+				[ "name" ] = "No Muzzle Flash",
+				
+				[ "default" ] = false,
+			} );
+
+			ModsGroup : toggle( {
+				[ "flag" ] = "Combat / Mods / NoRecoil",
+				[ "name" ] = "No Recoil",
+
+				[ "default" ] = false,
+			} );
+
+			ModsGroup : toggle( {
+				[ "flag" ] = "Combat / Mods / NoSpread",
+				[ "name" ] = "No Spread",
+
+				[ "default" ] = false,
+			} );
+		end
+	end
+
+	const VisualsTab = Interface : tab( "Visuals" ); do
+		const function SetProperty( Object, Property, Enabled, Value )
+			const PreviousValue = Storage : Get( `{ Object.Name } / { Property }` );
+
+			if ( Enabled ) then
+				if ( not PreviousValue ) then
+					Storage : Add( `{ Object.Name } / { Property }`, Object[ Property ] );
+				end Object[ Property ] = Value;
 			end
 
-			const ModsGroup = CombatTab : section( {
-				[ "name" ] = "Mods",
-				[ "side" ] = RIGHT_SIDE,
-				[ "autoSize" ] = true,
-			} ); do
-				ModsGroup : toggle( {
-					[ "flag" ] = "Combat / Mods / FireRate / Enabled",
-					[ "name" ] = "Firerate Modifier",
-
-					[ "default" ] = false,
-				} );
-
-				ModsGroup : slider( {
-					[ "flag" ] = "Combat / Mods / FireRate / Multiplier",
-					[ "name" ] = "Multiplier",
-					
-					[ "default" ] = 1,
-					[ "step" ] = .1,
-
-					[ "max" ] = 10,
-					[ "min" ] = 1,
-				} );
-
-				ModsGroup : divider( );
-
-				ModsGroup : toggle( {
-					[ "flag" ] = "Combat / Mods / NoMuzzleFlash",
-					[ "name" ] = "No Muzzle Flash",
-					
-					[ "default" ] = false,
-				} );
-
-				ModsGroup : toggle( {
-					[ "flag" ] = "Combat / Mods / NoRecoil",
-					[ "name" ] = "No Recoil",
-
-					[ "default" ] = false,
-				} );
-
-				ModsGroup : toggle( {
-					[ "flag" ] = "Combat / Mods / NoSpread",
-					[ "name" ] = "No Spread",
-
-					[ "default" ] = false,
-				} );
+			if ( not Enabled ) and PreviousValue then
+				Object[ Property ] = PreviousValue; Storage : Add( `{ Object.Name } / { Property }`, nil );
 			end
 		end
 
-		const VisualsTab = Interface : tab( "Visuals" ); do
-			const function SetProperty( Object, Property, Enabled, Value )
-				const PreviousValue = Storage : Get( `{ Object.Name } / { Property }` );
+		const PlayerGroup = VisualsTab : section( {
+			[ "name" ] = "Players",
 
-				if ( Enabled ) then
-					if ( not PreviousValue ) then
-						Storage : Add( `{ Object.Name } / { Property }`, Object[ Property ] );
-					end Object[ Property ] = Value;
-				end
+			[ "side" ] = LEFT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Visuals / Players / Enabled",
+				[ "name" ] = "Enabled",
 
-				if ( not Enabled ) and PreviousValue then
-					Object[ Property ] = PreviousValue; Storage : Add( `{ Object.Name } / { Property }`, nil );
+				[ "default" ] = false,
+			} );
+
+			PlayerGroup : divider( );
+
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Visuals / Players / HealthBar / Enabled",
+				[ "name" ] = "Healthbar",
+				[ "default" ] = false,
+			} ) : colorpicker( {
+				[ "flag" ] = "Visuals / Players / HealthBar / Color",
+				[ "name" ] = "Color",
+
+				[ "drawingTransparency" ] = false,
+				[ "transparency" ] = nil,
+
+				[ "color" ] = White,
+			} );
+
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Visuals / Players / Country / Enabled",
+				[ "name" ] = "Country",
+
+				[ "default" ] = false,
+			} ) : colorpicker( {
+				[ "flag" ] = "Visuals / Players / Country / Color",
+				[ "name" ] = "Color",
+
+				[ "transparency" ] = nil,
+				[ "color" ] = White,
+
+				[ "drawingTransparency" ] = false,
+			} );
+
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Visuals / Players / Name / Enabled",
+				[ "name" ] = "Name",
+				[ "default" ] = false,
+			} ) : colorpicker( {
+				[ "flag" ] = "Visuals / Players / Name / Color",
+				[ "name" ] = "Color",
+
+				[ "color" ] = White,
+
+				[ "drawingTransparency" ] = false,
+				[ "transparency" ] = nil,
+			} );
+
+			const BoxToggle = PlayerGroup : toggle( {
+				[ "flag" ] = "Visuals / Players / Box / Enabled",
+				[ "name" ] = "Box",
+
+				[ "default" ] = false,
+			} );
+			BoxToggle : colorpicker( {
+				[ "flag" ] = "Visuals / Players / Box / Color",
+				[ "name" ] = "Color",
+				
+				[ "color" ] = White,
+
+				[ "drawingTransparency" ] = false,
+				[ "transparency" ] = nil,
+			} );
+		end
+
+		const WorldGroup = VisualsTab : section( {
+			[ "name" ] = "World",
+
+			[ "side" ] = RIGHT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			const AmbientToggle = WorldGroup : toggle( {
+				[ "flag" ] = "Visuals / World / Ambient / Enabled",
+				[ "name" ] = "Ambient Modifier",
+
+				[ "default" ] = false,
+			} ); do
+				const OutdoorColor = AmbientToggle : colorpicker( {
+					[ "flag" ] = "Visuals / World / Ambient / OutdoorAmbient",
+					[ "name" ] = "Outdoor Ambient",
+
+					[ "drawingTransparency" ] = false,
+					[ "transparency" ] = nil,
+					[ "color" ] = White,
+				} );
+
+				const AmbientColor = AmbientToggle : colorpicker( {
+					[ "flag" ] = "Visuals / World / Ambient / Color",
+					[ "name" ] = "Ambient",
+
+					[ "drawingTransparency" ] = false,
+					[ "transparency" ] = nil,
+					[ "color" ] = White,
+				} );
+
+				for _, Element in { AmbientColor, OutdoorColor, AmbientToggle } do
+					Element.onChanged : Connect( function( )
+						SetProperty( Lighting, "OutdoorAmbient", AmbientToggle.value, OutdoorColor.color );
+						SetProperty( Lighting, "Ambient", AmbientToggle.value, AmbientColor.color );
+					end )
 				end
 			end
 
-			const PlayerGroup = VisualsTab : section( {
-				[ "name" ] = "Players",
+			WorldGroup : divider( );
 
-				[ "side" ] = LEFT_SIDE,
-				[ "autoSize" ] = true,
+			const TracerToggle = WorldGroup : toggle( {
+				[ "flag" ] = "Visuals / World / BulletTracers / Enabled",
+				[ "name" ] = "Tracers",
+				[ "default" ] = false,
 			} ); do
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Visuals / Players / Enabled",
-					[ "name" ] = "Enabled",
-
-					[ "default" ] = false,
-				} );
-
-				PlayerGroup : divider( );
-
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Visuals / Players / HealthBar / Enabled",
-					[ "name" ] = "Healthbar",
-					[ "default" ] = false,
-				} ) : colorpicker( {
-					[ "flag" ] = "Visuals / Players / HealthBar / Color",
-					[ "name" ] = "Color",
-
-					[ "drawingTransparency" ] = false,
+				TracerToggle : colorpicker( {
+					[ "name" ] = "Hit Color",
+					[ "flag" ] = "Visuals / World / BulletTracers / ColorHit",
+					[ "color" ] = Red,
 					[ "transparency" ] = nil,
-
-					[ "color" ] = White,
-				} );
-
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Visuals / Players / Country / Enabled",
-					[ "name" ] = "Country",
-
-					[ "default" ] = false,
-				} ) : colorpicker( {
-					[ "flag" ] = "Visuals / Players / Country / Color",
-					[ "name" ] = "Color",
-
-					[ "transparency" ] = nil,
-					[ "color" ] = White,
-
 					[ "drawingTransparency" ] = false,
 				} );
 
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Visuals / Players / Name / Enabled",
-					[ "name" ] = "Name",
-					[ "default" ] = false,
-				} ) : colorpicker( {
-					[ "flag" ] = "Visuals / Players / Name / Color",
-					[ "name" ] = "Color",
-
+				TracerToggle : colorpicker( {
+					[ "name" ] = "Color 1",
+					[ "flag" ] = "Visuals / World / BulletTracers / Color1",
 					[ "color" ] = White,
-
-					[ "drawingTransparency" ] = false,
 					[ "transparency" ] = nil,
+					[ "drawingTransparency" ] = false,
 				} );
 
-				const BoxToggle = PlayerGroup : toggle( {
-					[ "flag" ] = "Visuals / Players / Box / Enabled",
-					[ "name" ] = "Box",
-
-					[ "default" ] = false,
-				} );
-				BoxToggle : colorpicker( {
-					[ "flag" ] = "Visuals / Players / Box / Color",
-					[ "name" ] = "Color",
-					
+				TracerToggle : colorpicker( {
+					[ "name" ] = "Color 2",
+					[ "flag" ] = "Visuals / World / BulletTracers / Color2",
 					[ "color" ] = White,
-
-					[ "drawingTransparency" ] = false,
 					[ "transparency" ] = nil,
+					[ "drawingTransparency" ] = false,
 				} );
 			end
 
-			const WorldGroup = VisualsTab : section( {
-				[ "name" ] = "World",
+			WorldGroup : slider( {
+				[ "flag" ] = "Visuals / World / BulletTracers / Lifetime",
+				[ "name" ] = "Lifetime",
+				[ "default" ] = 1,
+				[ "min" ] = 1,
+				[ "max" ] = 10,
+			} );
 
-				[ "side" ] = RIGHT_SIDE,
-				[ "autoSize" ] = true,
-			} ); do
-				const AmbientToggle = WorldGroup : toggle( {
-					[ "flag" ] = "Visuals / World / Ambient / Enabled",
-					[ "name" ] = "Ambient Modifier",
+			WorldGroup : slider( {
+				[ "flag" ] = "Visuals / World / BulletTracers / Width",
+				[ "name" ] = "Width",
 
-					[ "default" ] = false,
-				} ); do
-					const OutdoorColor = AmbientToggle : colorpicker( {
-						[ "flag" ] = "Visuals / World / Ambient / OutdoorAmbient",
-						[ "name" ] = "Outdoor Ambient",
+				[ "default" ] = .1,
+				[ "step" ] = .1,
+				
+				[ "max" ] = 10,
+				[ "min" ] = .1,
+			} );
+		end
 
-						[ "drawingTransparency" ] = false,
-						[ "transparency" ] = nil,
-						[ "color" ] = White,
-					} );
+		const HitDetection = VisualsTab : section( {
+			[ "name" ] = "Hit Detection",
+			[ "side" ] = LEFT_SIDE,
 
-					const AmbientColor = AmbientToggle : colorpicker( {
-						[ "flag" ] = "Visuals / World / Ambient / Color",
-						[ "name" ] = "Ambient",
+			[ "autoSize" ] = true,
+		} ); do
+			HitDetection : toggle( {
+				[ "flag" ] = "Visuals / HitDetection / HitSounds / Enabled",
+				[ "name" ] = "Sounds",
 
-						[ "drawingTransparency" ] = false,
-						[ "transparency" ] = nil,
-						[ "color" ] = White,
-					} );
+				[ "default" ] = false,
+			} );
 
-					for _, Element in { AmbientColor, OutdoorColor, AmbientToggle } do
-						Element.onChanged : Connect( function( )
-							SetProperty( Lighting, "OutdoorAmbient", AmbientToggle.value, OutdoorColor.color );
-							SetProperty( Lighting, "Ambient", AmbientToggle.value, AmbientColor.color );
-						end )
+			HitDetection : dropdown( {
+				[ "flag" ] = "Visuals / HitDetection / HitSounds / Sound",
+				[ "default" ] = "Neverlose",
+				[ "name" ] = "Sound",
+
+				[ "options" ] = ( function( )
+					const Result = { };
+
+					for Index, Value in Hitsounds do
+						TableInsert( Result, Index );
 					end
-				end
 
-				WorldGroup : divider( );
+					return Result;
+				end )( ),
+			} );
 
-				const TracerToggle = WorldGroup : toggle( {
-					[ "flag" ] = "Visuals / World / BulletTracers / Enabled",
-					[ "name" ] = "Tracers",
+			HitDetection : slider( {
+				[ "flag" ] = "Visuals / HitDetection / HitSounds / Volume",
+				[ "name" ] = "Volume",
+					
+				[ "default" ] = 1,
+
+				[ "max" ] = 10,
+				[ "min" ] = 1,
+			} );
+
+			HitDetection : divider( );
+
+			HitDetection : toggle( {
+				[ "flag" ] = "Visuals / HitDetection / HitNotifications / Enabled",
+				[ "name" ] = "Notifications",
+
+				[ "default" ] = false,
+			} );
+
+			HitDetection : textbox( {
+				[ "flag" ] = "Visuals / HitDetection / HitNotifications / Text",
+				[ "name" ] = "Text",
+				
+				[ "default" ] = "Hit { PLAYER } in the { HITPART }!",
+				[ "placeholder" ] = "{ HITPART }, { PLAYER }",
+			} );
+
+			if ( HitMarkerAsset ) then
+				HitDetection : divider( );
+
+				const HitMarkersEnabled = HitDetection : toggle( {
+					[ "flag" ] = "Visuals / HitDetection / HitMarkers / Enabled",
+					[ "name" ] = "Markers",
+
 					[ "default" ] = false,
 				} ); do
-					TracerToggle : colorpicker( {
-						[ "name" ] = "Hit Color",
-						[ "flag" ] = "Visuals / World / BulletTracers / ColorHit",
+					HitMarkersEnabled : colorpicker( {
+						[ "flag" ] = "Visuals / HitDetection / HitMarkers / HitColor1",
+						[ "name" ] = "Hit Color 1",
+
+						[ "transparency" ] = nil,
 						[ "color" ] = Red,
-						[ "transparency" ] = nil,
+						
 						[ "drawingTransparency" ] = false,
 					} );
 
-					TracerToggle : colorpicker( {
+					HitMarkersEnabled : colorpicker( {
+						[ "flag" ] = "Visuals / HitDetection / HitMarkers / HitColor2",
+						[ "name" ] = "Hit Color 2",
+
+						[ "transparency" ] = nil,
+						[ "color" ] = Black,
+						
+						[ "drawingTransparency" ] = false,
+					} );
+
+					HitMarkersEnabled : colorpicker( {
+						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Color1",
 						[ "name" ] = "Color 1",
-						[ "flag" ] = "Visuals / World / BulletTracers / Color1",
-						[ "color" ] = White,
+
 						[ "transparency" ] = nil,
+						[ "color" ] = White,
+						
 						[ "drawingTransparency" ] = false,
 					} );
 
-					TracerToggle : colorpicker( {
+					HitMarkersEnabled : colorpicker( {
+						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Color2",
 						[ "name" ] = "Color 2",
-						[ "flag" ] = "Visuals / World / BulletTracers / Color2",
-						[ "color" ] = White,
+
 						[ "transparency" ] = nil,
+						[ "color" ] = White,
+						
 						[ "drawingTransparency" ] = false,
 					} );
 				end
 
-				WorldGroup : slider( {
-					[ "flag" ] = "Visuals / World / BulletTracers / Lifetime",
-					[ "name" ] = "Lifetime",
-					[ "default" ] = 1,
-					[ "min" ] = 1,
-					[ "max" ] = 10,
-				} );
-
-				WorldGroup : slider( {
-					[ "flag" ] = "Visuals / World / BulletTracers / Width",
-					[ "name" ] = "Width",
-
-					[ "default" ] = .1,
-					[ "step" ] = .1,
-					
-					[ "max" ] = 10,
-					[ "min" ] = .1,
-				} );
-			end
-
-			const HitDetection = VisualsTab : section( {
-				[ "name" ] = "Hit Detection",
-				[ "side" ] = LEFT_SIDE,
-
-				[ "autoSize" ] = true,
-			} ); do
 				HitDetection : toggle( {
-					[ "flag" ] = "Visuals / HitDetection / HitSounds / Enabled",
-					[ "name" ] = "Sounds",
+					[ "flag" ] = "Visuals / HitDetection / HitMarkers / PlayerOnly",
+					[ "name" ] = "Player Only",
 
-					[ "default" ] = false,
+					[ "default" ] = true,
 				} );
 
-				HitDetection : dropdown( {
-					[ "flag" ] = "Visuals / HitDetection / HitSounds / Sound",
-					[ "default" ] = "Neverlose",
-					[ "name" ] = "Sound",
+				HitDetection : divider( );
 
-					[ "options" ] = ( function( )
-						const Result = { };
+				HitDetection : toggle( {
+					[ "flag" ] = "Visuals / HitDetection / HitMarkers / Rotation / Enabled",
+					[ "name" ] = "Rotate",
 
-						for Index, Value in Hitsounds do
-							TableInsert( Result, Index );
-						end
-
-						return Result;
-					end )( ),
+					[ "default" ] = true,
 				} );
 
 				HitDetection : slider( {
-					[ "flag" ] = "Visuals / HitDetection / HitSounds / Volume",
-					[ "name" ] = "Volume",
-						
+					[ "flag" ] = "Visuals / HitDetection / HitMarkers / Rotation / Speed",
+					[ "name" ] = "Speed",
+					
 					[ "default" ] = 1,
 
 					[ "max" ] = 10,
@@ -5272,337 +5339,247 @@ do
 
 				HitDetection : divider( );
 
-				HitDetection : toggle( {
-					[ "flag" ] = "Visuals / HitDetection / HitNotifications / Enabled",
-					[ "name" ] = "Notifications",
-
-					[ "default" ] = false,
-				} );
-
-				HitDetection : textbox( {
-					[ "flag" ] = "Visuals / HitDetection / HitNotifications / Text",
-					[ "name" ] = "Text",
+				HitDetection : slider( {
+					[ "flag" ] = "Visuals / HitDetection / HitMarkers / Lifetime",
+					[ "name" ] = "Lifetime",
 					
-					[ "default" ] = "Hit { PLAYER } in the { HITPART }!",
-					[ "placeholder" ] = "{ HITPART }, { PLAYER }",
-				} );
-
-				if ( HitMarkerAsset ) then
-					HitDetection : divider( );
-
-					const HitMarkersEnabled = HitDetection : toggle( {
-						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Enabled",
-						[ "name" ] = "Markers",
-
-						[ "default" ] = false,
-					} ); do
-						HitMarkersEnabled : colorpicker( {
-							[ "flag" ] = "Visuals / HitDetection / HitMarkers / HitColor1",
-							[ "name" ] = "Hit Color 1",
-
-							[ "transparency" ] = nil,
-							[ "color" ] = Red,
-							
-							[ "drawingTransparency" ] = false,
-						} );
-
-						HitMarkersEnabled : colorpicker( {
-							[ "flag" ] = "Visuals / HitDetection / HitMarkers / HitColor2",
-							[ "name" ] = "Hit Color 2",
-
-							[ "transparency" ] = nil,
-							[ "color" ] = Black,
-							
-							[ "drawingTransparency" ] = false,
-						} );
-
-						HitMarkersEnabled : colorpicker( {
-							[ "flag" ] = "Visuals / HitDetection / HitMarkers / Color1",
-							[ "name" ] = "Color 1",
-
-							[ "transparency" ] = nil,
-							[ "color" ] = White,
-							
-							[ "drawingTransparency" ] = false,
-						} );
-
-						HitMarkersEnabled : colorpicker( {
-							[ "flag" ] = "Visuals / HitDetection / HitMarkers / Color2",
-							[ "name" ] = "Color 2",
-
-							[ "transparency" ] = nil,
-							[ "color" ] = White,
-							
-							[ "drawingTransparency" ] = false,
-						} );
-					end
-
-					HitDetection : toggle( {
-						[ "flag" ] = "Visuals / HitDetection / HitMarkers / PlayerOnly",
-						[ "name" ] = "Player Only",
-
-						[ "default" ] = true,
-					} );
-
-					HitDetection : divider( );
-
-					HitDetection : toggle( {
-						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Rotation / Enabled",
-						[ "name" ] = "Rotate",
-
-						[ "default" ] = true,
-					} );
-
-					HitDetection : slider( {
-						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Rotation / Speed",
-						[ "name" ] = "Speed",
-						
-						[ "default" ] = 1,
-
-						[ "max" ] = 10,
-						[ "min" ] = 1,
-					} );
-
-					HitDetection : divider( );
-
-					HitDetection : slider( {
-						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Lifetime",
-						[ "name" ] = "Lifetime",
-						
-						[ "default" ] = 1,
-
-						[ "max" ] = 10,
-						[ "min" ] = 1,
-					} );
-
-					HitDetection : slider( {
-						[ "flag" ] = "Visuals / HitDetection / HitMarkers / Size",
-						[ "name" ] = "Size",
-						
-						[ "default" ] = 30,
-
-						[ "max" ] = 100,
-						[ "min" ] = 1,
-					} );
-				end
-			end
-		end
-
-		const MiscTab = Interface : tab( "Misc" ); do
-			const ExploitGroup = MiscTab : section( {
-				[ "name" ] = "Exploits",
-				[ "side" ] = RIGHT_SIDE,
-
-				[ "autoSize" ] = true,
-			} ); do
-				ExploitGroup : toggle( {
-					[ "flag" ] = "Misc / Exploits / PingSpoof / Enabled",
-					[ "name" ] = "Ping Spoof",
-					[ "default" ] = false,
-				} );
-
-				ExploitGroup : slider( {
-					[ "flag" ] = "Misc / Exploits / PingSpoof / Value",
-					[ "name" ] = "Value",
-					
-					[ "default" ] = 0,
-
-					[ "max" ] = 1000,
-					[ "min" ] = 0,
-				} );
-			end
-
-			const PlayerGroup = MiscTab : section( {
-				[ "name" ] = "Player",
-				[ "side" ] = LEFT_SIDE,
-				
-				[ "autoSize" ] = true,
-			} ); do
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Misc / Player / Anchor / Enabled",
-					[ "name" ] = "Anchor",
-					[ "default" ] = false,
-				} ) : keybind( {
-					[ "flag" ] = "Misc / Player / Anchor / Key",
-					[ "name" ] = "Anchor",
-
-					[ "default" ] = Enum.KeyCode.V,
-					[ "affectToggle" ] = false,
-					[ "hold" ] = false,
-				} );
-
-				PlayerGroup : divider( );
-
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Misc / Player / WalkSpeed / Enabled",
-					[ "name" ] = "Walk Speed",
-					[ "default" ] = false,
-				} ) : keybind( {
-					[ "flag" ] = "Misc / Player / WalkSpeed / Key",
-					[ "name" ] = "Walk Speed",
-
-					[ "default" ] = Enum.KeyCode.Z,
-
-					[ "affectToggle" ] = false,
-					[ "hold" ] = false,
-				} );
-
-				PlayerGroup : slider( {
-					[ "flag" ] = "Misc / Player / WalkSpeed / Multiplier",
-					[ "name" ] = "Multiplier",
-
 					[ "default" ] = 1,
-					[ "step" ] = .1;
-					
-					[ "min" ] = 1,
+
 					[ "max" ] = 10,
-				} );
-
-				PlayerGroup : divider( );
-
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Misc / Player / AntiAim / Enabled",
-					[ "name" ] = "Anti Aim",
-					[ "default" ] = false,
-				} );
-
-				PlayerGroup : toggle( {
-					[ "flag" ] = "Misc / Player / AntiAim / Spinbot",
-					[ "name" ] = "Spinbot",
-					[ "default" ] = false,
-				} );
-
-				PlayerGroup : slider( {
-					[ "flag" ] = "Misc / Player / AntiAim / Speed",
-					[ "name" ] = "Speed",
-					
-					[ "default" ] = 1,
-
 					[ "min" ] = 1,
-					[ "max" ] = 100,
 				} );
 
-				PlayerGroup : dropdown( {
-					[ "flag" ] = "Misc / Player / AntiAim / Method",
-					[ "name" ] = "Method",
+				HitDetection : slider( {
+					[ "flag" ] = "Visuals / HitDetection / HitMarkers / Size",
+					[ "name" ] = "Size",
+					
+					[ "default" ] = 30,
 
-					[ "options" ] = { "Shift", "Down", "Up" },
-					[ "default" ] = "Down",
+					[ "max" ] = 100,
+					[ "min" ] = 1,
 				} );
 			end
 		end
+	end
 
-		const SettingsTab = Interface : tab( "Settings" ); do
-			const ConfigsAssets = Interface.configs;
-			const Config = SettingsTab : section( {
-				[ "name" ] = "Config",
+	const MiscTab = Interface : tab( "Misc" ); do
+		const ExploitGroup = MiscTab : section( {
+			[ "name" ] = "Exploits",
+			[ "side" ] = RIGHT_SIDE,
 
-				[ "side" ] = LEFT_SIDE,
-				[ "autoSize" ] = true,
-			} ); do
-				const List = Config : list( {
-					[ "flag" ] = "Config / List",
-					[ "size" ] = 150,
-				} );
+			[ "autoSize" ] = true,
+		} ); do
+			ExploitGroup : toggle( {
+				[ "flag" ] = "Misc / Exploits / PingSpoof / Enabled",
+				[ "name" ] = "Ping Spoof",
+				[ "default" ] = false,
+			} );
 
-				const ConfigNameTextbox = Config : textbox( {
-					[ "default" ] = "awesome config",
+			ExploitGroup : slider( {
+				[ "flag" ] = "Misc / Exploits / PingSpoof / Value",
+				[ "name" ] = "Value",
+				
+				[ "default" ] = 0,
 
-					[ "name" ] = "Configuration  Name",
-					[ "flag" ] = "Config / Name",
-				} );
+				[ "max" ] = 1000,
+				[ "min" ] = 0,
+			} );
+		end
 
-				const Reload = Config : button( "Reload" );
+		const PlayerGroup = MiscTab : section( {
+			[ "name" ] = "Player",
+			[ "side" ] = LEFT_SIDE,
+			
+			[ "autoSize" ] = true,
+		} ); do
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Misc / Player / Anchor / Enabled",
+				[ "name" ] = "Anchor",
+				[ "default" ] = false,
+			} ) : keybind( {
+				[ "flag" ] = "Misc / Player / Anchor / Key",
+				[ "name" ] = "Anchor",
 
-				const Save = Config : button( "Save" );
-				const Load = Config : button( "Load" );
+				[ "default" ] = Enum.KeyCode.V,
+				[ "affectToggle" ] = false,
+				[ "hold" ] = false,
+			} );
 
-				const function UpdateList( )
-					const Files, Result = ConfigsAssets : listFiles( ), { };
+			PlayerGroup : divider( );
 
-					for _, File in Files do
-						const ConfigName = string.match( File, "([^/\\]+)$" );
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Misc / Player / WalkSpeed / Enabled",
+				[ "name" ] = "Walk Speed",
+				[ "default" ] = false,
+			} ) : keybind( {
+				[ "flag" ] = "Misc / Player / WalkSpeed / Key",
+				[ "name" ] = "Walk Speed",
 
-						if ( not ConfigsAssets : isFile( ConfigName ) ) then
-							continue;
-						end
+				[ "default" ] = Enum.KeyCode.Z,
 
-						TableInsert( Result, ConfigName );
-					end
+				[ "affectToggle" ] = false,
+				[ "hold" ] = false,
+			} );
 
-					List : updateList( Result );
-				end UpdateList( );
+			PlayerGroup : slider( {
+				[ "flag" ] = "Misc / Player / WalkSpeed / Multiplier",
+				[ "name" ] = "Multiplier",
 
-				const KeybindList = Interface.keybindList; do
-					Config : divider( ); Config : label( "Keybind" ) : keybind( {
-						[ "default" ] = Enum.KeyCode.Delete,
-						[ "flag" ] = "Config / Keybind",
-						[ "ignoreKeybindList" ] = true,
-					} ).onChanged : Connect( function( )
-						Interface : setVisible( not Interface.visible );
-					end)
+				[ "default" ] = 1,
+				[ "step" ] = .1;
+				
+				[ "min" ] = 1,
+				[ "max" ] = 10,
+			} );
 
-					Config : toggle( {
-						[ "flag" ] = "Config / KeybindList",
-						[ "name" ] = "Keybind List",
+			PlayerGroup : divider( );
 
-						[ "default" ] = true
-					} ).onChanged : Connect( function( State )
-						KeybindList : setVisible( State )
-					end ) KeybindList : setVisible( true );
-				end
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Misc / Player / AntiAim / Enabled",
+				[ "name" ] = "Anti Aim",
+				[ "default" ] = false,
+			} );
 
-				List.onChanged : Connect( function( NewOption )
-					ConfigNameTextbox : set( NewOption );
-				end )
+			PlayerGroup : toggle( {
+				[ "flag" ] = "Misc / Player / AntiAim / Spinbot",
+				[ "name" ] = "Spinbot",
+				[ "default" ] = false,
+			} );
 
-				Save.onPressed : Connect( function( )
-					const ConfigName = Flags[ "Config / Name" ];
+			PlayerGroup : slider( {
+				[ "flag" ] = "Misc / Player / AntiAim / Speed",
+				[ "name" ] = "Speed",
+				
+				[ "default" ] = 1,
 
-					if ( not ConfigName ) or ( StringLen( ConfigName ) < 1 ) then
-						return;
-					end
+				[ "min" ] = 1,
+				[ "max" ] = 100,
+			} );
 
-					ConfigsAssets : writeFile( ConfigName, HttpService : JSONEncode(  Interface : getConfig( ) ) ); UpdateList( );
-				end )
+			PlayerGroup : dropdown( {
+				[ "flag" ] = "Misc / Player / AntiAim / Method",
+				[ "name" ] = "Method",
 
-				Load.onPressed : Connect( function( )
-					const ConfigName = Flags[ "Config / Name" ];
+				[ "options" ] = { "Shift", "Down", "Up" },
+				[ "default" ] = "Down",
+			} );
+		end
+	end
+
+	const SettingsTab = Interface : tab( "Settings" ); do
+		const ConfigsAssets = Interface.configs;
+		const Config = SettingsTab : section( {
+			[ "name" ] = "Config",
+
+			[ "side" ] = LEFT_SIDE,
+			[ "autoSize" ] = true,
+		} ); do
+			const List = Config : list( {
+				[ "flag" ] = "Config / List",
+				[ "size" ] = 150,
+			} );
+
+			const ConfigNameTextbox = Config : textbox( {
+				[ "default" ] = "awesome config",
+
+				[ "name" ] = "Configuration  Name",
+				[ "flag" ] = "Config / Name",
+			} );
+
+			const Reload = Config : button( "Reload" );
+
+			const Save = Config : button( "Save" );
+			const Load = Config : button( "Load" );
+
+			const function UpdateList( )
+				const Files, Result = ConfigsAssets : listFiles( ), { };
+
+				for _, File in Files do
+					const ConfigName = string.match( File, "([^/\\]+)$" );
 
 					if ( not ConfigsAssets : isFile( ConfigName ) ) then
-						return;
+						continue;
 					end
 
-					Interface : loadConfig( HttpService : JSONDecode( ConfigsAssets : readFile( ConfigName ) ) );
-				end )
+					TableInsert( Result, ConfigName );
+				end
 
-				Reload.onPressed : Connect( UpdateList );
+				List : updateList( Result );
+			end UpdateList( );
+
+			const KeybindList = Interface.keybindList; do
+				Config : divider( ); Config : label( "Keybind" ) : keybind( {
+					[ "default" ] = Enum.KeyCode.Delete,
+					[ "flag" ] = "Config / Keybind",
+					[ "ignoreKeybindList" ] = true,
+				} ).onChanged : Connect( function( )
+					Interface : setVisible( not Interface.visible );
+				end)
+
+				Config : toggle( {
+					[ "flag" ] = "Config / KeybindList",
+					[ "name" ] = "Keybind List",
+
+					[ "default" ] = true
+				} ).onChanged : Connect( function( State )
+					KeybindList : setVisible( State )
+				end ) KeybindList : setVisible( true );
 			end
+
+			List.onChanged : Connect( function( NewOption )
+				ConfigNameTextbox : set( NewOption );
+			end )
+
+			Save.onPressed : Connect( function( )
+				const ConfigName = Flags[ "Config / Name" ];
+
+				if ( not ConfigName ) or ( StringLen( ConfigName ) < 1 ) then
+					return;
+				end
+
+				ConfigsAssets : writeFile( ConfigName, HttpService : JSONEncode(  Interface : getConfig( ) ) ); UpdateList( );
+			end )
+
+			Load.onPressed : Connect( function( )
+				const ConfigName = Flags[ "Config / Name" ];
+
+				if ( not ConfigsAssets : isFile( ConfigName ) ) then
+					return;
+				end
+
+				Interface : loadConfig( HttpService : JSONDecode( ConfigsAssets : readFile( ConfigName ) ) );
+			end )
+
+			Reload.onPressed : Connect( UpdateList );
 		end
+	end
 
-		KeybindFlags = SetMetatable( { }, {
-			__index = function( Self, Index )
-				return Flags[ Index ] and Flags[ StringGSub( Index, "/ Enabled", "/ Key" ) ];
-			end
-		} );
+	KeybindFlags = SetMetatable( { }, {
+		__index = function( Self, Index )
+			const Flag = StringGSub( Index, "/ Enabled", "/ Key" );
+			const ToggleState = Flags[ Index ];
 
-		Flags = SetMetatable( { }, {
-			__index = function( Self, Index )
-				return Interface.flags[ Index ];
+			if ( not Elements[ Flag ] ) then
+				return ToggleState;
 			end
-		} );
-	end )( );
+
+			return ToggleState and ( Flags[ Flag ] or false );
+		end
+	} );
+
+	Elements = Interface.elements;
+	Flags = Interface.flags;
 end
 
 -- Main
 do
 	-- Connections
 	do
-		DrawingImmediate.GetPaint( 1 ) : Connect( LPH_NO_VIRTUALIZE( function( )
+		DrawingImmediate.GetPaint( 1 ) : Connect( function( )
 			Visuals : Stepper( );
-		end ) )
+		end )
 
-		RunService.PreRender : Connect( LPH_NO_VIRTUALIZE( function( )
+		RunService.PreRender : Connect( function( )
 			Setters : Stepper( );
 
 			Legitbot : Stepper( );
@@ -5612,14 +5589,14 @@ do
 
 			WorldRenderer : Stepper( );
 			Scanning : Stepper( );
-		end ) )
+		end )
 	end
 
 	-- Hooks
 	do
 		-- Meta Methods
 		do
-			local __NameCall, __AngleCounter = nil, 0; __NameCall = HookMetaMethod( Game, "__namecall", LPH_NO_VIRTUALIZE( function( Self, ... )
+			local __NameCall, __AngleCounter = nil, 0; __NameCall = HookMetaMethod( Game, "__namecall", function( Self, ... )
 				const Method, Arguments = GetNameCallMethod( ), { ... };
 				const Caller = DebugInfo( 3, "n" );
 
@@ -5787,77 +5764,75 @@ do
 
 				-- Getters
 				do
-					if ( Method == "PivotTo" ) then -- SAINT GEORGE SSAVE ME
-						const Stack = DebugGetStack( 3 );
-
-						const Name = ToString( Self );
+					if ( Method == "BulkMoveTo" ) and ( Caller == "flush" ) then -- Welcome to the nestfest brother
+						const Stack = DebugGetStack( 4 );
 						const Object = Stack[ 1 ];
-						
-						if ( Caller == "render_body" and Name == "torso" ) then
+
+						if ( TypeOf( Object ) == "table" ) then
 							const CollisionModel = Object.instance;
 
 							if ( CollisionModel ) then
-								const DataEntries = Replicators.DataEntries;
+								const Tag = Object.tag;
 
-								local CharacterName = ToString( CollisionModel );
-								const PreviousDataEntry = DataEntries[ CharacterName ];
+								if ( Tag == "Character" ) then
+									const DataEntries = Replicators.DataEntries;
 
-								if ( not PreviousDataEntry ) or ( Object ~= PreviousDataEntry.StateObject ) then
-									const UserId = CollisionModel.GetAttribute( CollisionModel, "UserId" );
-									const CharacterModel = Object.values.viewmodels;
+									local CharacterName = ToString( CollisionModel );
+									const PreviousDataEntry = DataEntries[ CharacterName ];
 
-									const IsZombie = UserId < 0; if ( IsZombie ) then
-										CharacterName = `{ CharacterName } { UserId }`;
+									if ( not PreviousDataEntry ) or ( Object ~= PreviousDataEntry.StateObject ) then
+										const UserId = CollisionModel.GetAttribute( CollisionModel, "UserId" );
+										const CharacterModel = Object.values.viewmodels;
+
+										const IsZombie = UserId < 0; if ( IsZombie ) then
+											CharacterName = `{ CharacterName } { UserId }`;
+										end
+										
+										DataEntries[ CharacterName ] = {
+											[ "Model" ] = CharacterModel,
+
+											[ "Name" ] = CharacterName,
+											[ "StateObject" ] = Object,
+
+											[ "Zombie" ] = IsZombie,
+											[ "Tick" ] = GameTick
+										};
 									end
-									
-									DataEntries[ CharacterName ] = {
-										[ "Model" ] = CharacterModel,
-
-										[ "Name" ] = CharacterName,
-										[ "StateObject" ] = Object,
-
-										[ "Zombie" ] = IsZombie,
-										[ "Tick" ] = GameTick
-									};
 								end
-							end
-						end
 
-						if ( Caller == "render" ) and ( Name == "Root" ) then
-							const Owner = Object.owner;
+								if ( Tag == "Gun" ) then
+									const Owner = Object.owner;
 						
-							if ( ToString( Owner.instance ) == LocalName ) then
-								Controller.WeaponObject = Object;
+									if ( ToString( Owner.instance ) == LocalName ) then
+										Controller.WeaponObject = Object;
+									end
+								end
 							end
 						end
 					end
 				end
 
 				return __NameCall( Self, TableUnpack( Arguments ) );
-			end ) )
+			end )
 
-			local __Index = nil; __Index = HookMetaMethod( Game, "__index", LPH_NO_VIRTUALIZE( function( Self, Index )
-				const Level = 3;
+			local __Index = nil; __Index = HookMetaMethod( Game, "__index", function( Self, Index )
+				const Result = __Index( Self, Index );
 
-				if ( Index == "Value" ) and ( DebugInfo( Level, "n" ) == "get_shoot_look" ) then
-					const HitPart = Scanning.SilentTarget;
+				if ( Index == "CFrame" ) and ( DebugInfo( 3, "n" ) == "get_shoot_look" ) then
+					const HitPart = Scanning.SilentAimTarget;
 
-					for Stack, Value in ( HitPart and DebugGetStack( Level ) ) or { } do
-						if ( TypeOf( Value ) ~= "CFrame" ) then
-							continue;
-						end
-
-						DebugSetStack( Level, Stack, CFrameLookAt( Value.Position, __Index( HitPart, "Position" ) ) );
+					if ( HitPart ) then
+						return CFrameLookAt( Result.Position, HitPart.Position );
 					end
 				end
-				
-				return __Index( Self, Index );
-			end ) )
+
+				return Result;
+			end )
 		end
 
 		-- Functions
 		do
-			local __MathRandom = nil; __MathRandom = HookFunction( Environment.math.random, LPH_NO_VIRTUALIZE( function( ... )
+			local __MathRandom = nil; __MathRandom = HookFunction( Environment.math.random, function( ... )
 				const Name = DebugInfo( 3, "n" );
 
 				const Minimum = Select( 1, ... );
@@ -5872,9 +5847,9 @@ do
 				end
 
 				return __MathRandom( ... );
-			end ) )
+			end )
 
-			local __CFrameNew = nil; __CFrameNew = HookFunction( Environment.CFrame.new, LPH_NO_VIRTUALIZE( function( ... )
+			local __CFrameNew = nil; __CFrameNew = HookFunction( Environment.CFrame.new, function( ... )
 				if ( Select( "#", ... ) == 0 and DebugInfo( 3, "n" ) == "recoil_function" ) and ( Storage : Get( "Ragebot / REM_ANIM_PROCEED" ) or Flags[ "Combat / Mods / NoRecoil" ] ) then
 					const Stack = DebugGetStack( 3 );
 					const Length = #Stack;
@@ -5889,17 +5864,17 @@ do
 				end
 
 				return __CFrameNew( ... );
-			end ) )
+			end )
 
-			local __TaskSpawn = nil; __TaskSpawn = HookFunction( Environment.task.spawn, LPH_NO_VIRTUALIZE( function( ... )
+			local __TaskSpawn = nil; __TaskSpawn = HookFunction( Environment.task.spawn, function( ... )
 				if ( DebugInfo( 3, "n" ) == "shoot" ) and Storage : Get( "Ragebot / REM_ANIM_PROCEED" )  then
 					return;
 				end
 
 				return __TaskSpawn( ... );
-			end ) )
+			end )
 
-			local __OSClock = nil; __OSClock = hookfunction( Environment.os.clock, LPH_NO_VIRTUALIZE( function( ... )
+			local __OSClock = nil; __OSClock = hookfunction( Environment.os.clock, function( ... )
 				local Result = __OSClock( ... );
 
 				if ( DebugInfo( 3, "n" ) == "input_render" ) then
@@ -5907,7 +5882,7 @@ do
 				end
 				
 				return Result;
-			end ) )
+			end )
 		end
 	end
 end
